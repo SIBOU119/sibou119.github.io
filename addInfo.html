@@ -1,0 +1,37 @@
+<html>
+<style>
+    * {
+        font-family: Arial, Sans-serif;
+        background-color: #e5efee;
+    }
+</style>
+
+<head>
+    <h1 style="display:flex; align-items: center; justify-content: center">
+        Ajouter Info
+    </h1>
+</head>
+
+<body style="padding: 20px;">
+    <label for="texte"> Nom:  </label><br>
+    <textarea id="nom" rows="1" style="background-color:white; resize:none; width: 100%;"></textarea>
+    <br><br>
+    <label>Texte: </label> <br>
+    <textarea id="texte" rows="8" style="background-color:white;  resize:none; width: 100%;" placeholder="Voici ma description..."></textarea>
+
+    <h4>Affichage de l'info: </h4>
+
+    <input type="radio" id="Public" name="info">
+    <label for="Public">Public</label><br>
+    <input type="radio" id="Prive" name="info">
+    <label for="Prive">Prive</label><br>
+    <br>
+    <br>
+    <div>
+        <button onclick="clearAllData()" style="margin-right:15px; background-color:white">Effacer</button>
+        <input type="submit" value="Envoyer" onclick="checkForm()" style="float: right; margin-right:15px; background-color:white">
+    </div>
+    <script src="static/js/fonctions.js"></script>
+</body>
+
+</html>
