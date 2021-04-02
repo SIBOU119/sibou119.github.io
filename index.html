@@ -1,134 +1,27 @@
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="static/css/styles.css">
-    <title>Ma premiere page web</title>
-
-    <div class="zone-titre">
-        <div class="titre">
-            <h1>
-                <font color="#000000">Mon site Web</font>
-                <font color="#ff0000">carto</font>
-                <font color="#000000"> statique</font>
-            </h1>
-            <p>
-                <b>Interface permettant de visualiser des cartes d'un secteur</b>. <br> Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-                ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
-                mollit anim id est laborum.
-            </p>
-        </div>
-        <div class="logo" id="logo" style="background-image: url('static/images/r500_0.gif');" onclick="myClickFunction()" onmouseleave="myLeaveFunction()">
-
-            <script type="text/javascript">
-                function myClickFunction() {
-                    document.getElementById("logo").style.backgroundImage = "url('static/images/monseigneurbadard (2).png')";
-                }
-
-                function myLeaveFunction() {
-                    document.getElementById("logo").style.backgroundImage = "url('static/images/r500_0.gif')";
-                }
-            </script>
-
-            <h2>Logo</h2>
-        </div>
-    </div>
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>Javascript on steroides</title>
 </head>
-
 <body>
-    <div class="visual-zone">
-        <div class="view-zone">
-            <div class="tools-bar">
-                <h2><u>Outils</u></h2>
-                <div class="tools">
-                    <button class="button" id="zoomPlus" onclick="zoomIn()">Zoom +</button>
-                    <button class="button" id="zoomMoins" onclick="zoomOut()">Zoom -</button>
-                    <button class="button" onclick="addInfo()">Ajouter Info</button>
-                    <button class="button" onclick="getInfo()">Info Navigateur</button>
-                </div>
+    <div class="container-1">
+        <h2>Challenge 1: Your age in Days</h2>
+        <div class="flex-box-container-1">
+            <div>
+                <button class="btn btn-primary" onclick="ageInDays()">Click me</button>
             </div>
-
-            <div class="carte-zone">
-                <button class="button" id="btnUp" style="transform: rotate(90deg);" onclick="up()">&#10096</button>
-
-                <div class="carte-img">
-                    <button class="button" id="btnLeft" onclick="left()">&#10096</button>
-                    <img id="imageICI" src="static/images/r500_0.gif" usemap="#workmap" onclick="viewURL()">
-                    <map name="workmap" id="workmap">
-                        <area id="imageMap" shape="rect" coords="225,120,350,250" href="" onclick="openInfo()">
-                    </map>
-                    <button class="button" id="btnRight" onclick="right()">&#10097</button>
-                </div>
-
-                <button class="button" id="btnDown" style="transform: rotate(-90deg);" onclick="down()">&#10096</button>
+            <div>
+                <button class="btn btn-danger" onclick="reset()">Reset</button>
             </div>
         </div>
-        <div class="table-zone">
-            <h2><u>Légende</u></h2>
-            <table>
-                <tr class="table-row">
-                    <td class="table-item">
-                        <image src="static/images/zones_urbaines.png"></image>
-                    </td>
-                    <td>Zones urbaines</td>
-                </tr>
 
-                <tr class="table-row">
-                    <td class="table-item">
-                        <image src="static/images/zones_vegetation.png"></image>
-                    </td>
-                    <td>Zone de végétation</td>
-                </tr>
-
-                <tr class="table-row">
-                    <td class="table-item">
-                        <image src="static/images/cours_deau.png"></image>
-                    </td>
-                    <td>Lacs et rivières</td>
-                </tr>
-
-                <tr class="table-row">
-                    <td class="table-item">
-                        <image src="static/images/autoroutes.png"></image>
-                    </td>
-                    <td>Autoroutes</td>
-                </tr>
-
-                <tr class="table-row">
-                    <td class="table-item">
-                        <image src="static/images/routes_primaires.png"></image>
-                    </td>
-                    <td>Routes primaires</td>
-                </tr>
-
-                <tr class="table-row">
-                    <td class="table-item">
-                        <image src="static/images/routes_secondaires.png"></image>
-                    </td>
-                    <td>Routes secondaires</td>
-                </tr>
-
-                <tr class="table-row">
-                    <td class="table-item">
-                        <image src="static/images/routes_tersiaires.png"></image>
-                    </td>
-                    <td>Routes tertiaires</td>
-                </tr>
-            </table>
+        <div class="flex-box-container-1">
+            <div id="flex-box-result"></div>
         </div>
     </div>
-    <script src="static/js/fonctions.js"></script>
+    <script src="static/js/script.js"></script>
 </body>
-<footer>
-    <div class="text-info">
-        <p> Envoyer un
-            <a href="mailto:simon.bourgault.2@ulaval.ca">courriel</a> à  l'administrateur du site
-        </p>
-
-        <a href="https://sitescours.monportail.ulaval.ca/ena/site/accueil?idSite=127229&_js=true&idPage=2970402" target="_blank" rel="noopener noreferrer">
-			Lien sur le site du cours</a>
-    </div>
-</footer>
-
 </html>
