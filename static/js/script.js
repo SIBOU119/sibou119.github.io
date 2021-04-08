@@ -17,19 +17,15 @@ function search() {
 }
 
 function save() {
-    html2canvas(screenshotTarget).then((canvas) => {
-        const base64image = canvas.toDataURL("image/png");
-        window.location.href = base64image;
-    });
+    var printContent = document.getElementById('text');
+    var WinPrint = window.open('', '', 'width=700,height=650');
+    WinPrint.document.write(printContent.innerHTML);
+    WinPrint.document.close();
+    WinPrint.focus();
+    WinPrint.print();
+    WinPrint.close();
 }
 
 function extend() {
-    html2canvas(document.body, {
-        onrendered: function(canvas) {
-            var img = canvas.toDataURL()
-            $.post("save_screenshot.php", { data: img }, function(file) {
-                window.location.href = "save_screenshot.php?file=" + file
-            });
-        }
-    });
+    window.open("index.html", "_self")
 }

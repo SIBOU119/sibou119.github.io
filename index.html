@@ -11,7 +11,73 @@
 <body class="body">
     <div class="menu_legend">
         <H2>Statistiques</H2>
-        <p id="text">Nom</p>
+
+        <table class="usertable" id="text">
+            <tr>
+                <td class="user">Simon</td>
+                <td class="count">25</td>
+            </tr>
+            <tr>
+                <td class="user">Nicolas</td>
+                <td class="count">92</td>
+            </tr>
+            <tr>
+                <td class="user">William</td>
+                <td class="count">105</td>
+            </tr>
+            <tr>
+                <td class="user">Laurence</td>
+                <td class="count">54</td>
+            </tr>
+            <tr>
+                <td class="user">Sabrina</td>
+                <td class="count">86</td>
+            </tr>
+        </table>
+
+
+        <table class="droptable" id="text">
+            <tr>
+                <td class="user">Rue des Pionniers</td>
+                <td class="count">25</td>
+            </tr>
+            <tr>
+                <td class="user">Boulevard Méthot</td>
+                <td class="count">92</td>
+            </tr>
+            <tr>
+                <td class="user">Rue de l'Estran</td>
+                <td class="count">105</td>
+            </tr>
+            <tr>
+                <td class="user">Rue Simonne-Monet-Chartrand</td>
+                <td class="count">54</td>
+            </tr>
+            <tr>
+                <td class="user">Rue des Véroniques</td>
+                <td class="count">86</td>
+            </tr>
+            <tr>
+                <td class="user">Rue de la Sorbonne</td>
+                <td class="count">23</td>
+            </tr>
+            <tr>
+                <td class="user">Rue de Bernière</td>
+                <td class="count">59</td>
+            </tr>
+            <tr>
+                <td class="user">Rue de Saint-Denis</td>
+                <td class="count">165</td>
+            </tr>
+            <tr>
+                <td class="user">Rue de l'Aubépine</td>
+                <td class="count">15</td>
+            </tr>
+            <tr class="total">
+                <td class="user">Total</td>
+                <td class="count">362</td>
+            </tr>
+        </table>
 
         <div class="buttons">
             <Button class="btn" id="btnSearch" onmouseover="over(this)" onclick="search()" onmouseleave="left(this)">Search</Button>
@@ -22,7 +88,7 @@
     <div class="content">
         <h1 class="title">Répartition des sapins collectés</h1>
         <div class="map_zone" id="map">
-            <img src="static/image/map.png">
+            <img src="http://geosoa-server.scg.ulaval.ca/cgi-bin/mapserv?map=/home/puser02/public_html/lab_mapserver/mapfiles/mapfile_Q3.map&mode=map&layer=vegetation&layer=routes&layer=rives&layer=coursdeau&layer=secteurs&layer=postecanada&layer=bibliotheque&layer=title&layer=meta">
         </div>
     </div>
     <script src="static/js/script.js"></script>
