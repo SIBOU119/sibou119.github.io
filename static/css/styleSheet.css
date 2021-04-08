@@ -1,0 +1,65 @@
+.body {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    background-color: black;
+}
+
+.menu_legend {
+    display: flex;
+    flex-direction: column;
+    width: 20%;
+    height: 100%;
+    text-align: center;
+    background-color: grey;
+}
+
+.menu_legend h2 {
+    text-align: center;
+    color: black;
+}
+
+.menu_legend p {
+    text-align: justify;
+    padding: 5%;
+    color: white;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+.title {
+    color: #505050;
+    text-decoration: underline;
+    text-align: center;
+    margin: 5px;
+}
+
+.buttons {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    width: 16%;
+}
+
+.btn {
+    width: 90%;
+    padding: 5%;
+    margin: 10% 5% 0 5%;
+    background-color: #BBBBBB;
+}
+
+.map_zone img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 98%;
+}

@@ -4,114 +4,28 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expérience Pré-Examen</title>
-    <style type="text/css">
-        #map {
-            height: 100%;
-            padding: 5px;
-        }
-        
-        .body {
-            display: flex;
-            flex-direction: row;
-        }
-        
-        .menu {
-            display: flex;
-            flex-direction: column;
-            width: 30%;
-            height: 100%;
-            text-align: center;
-            background-color: grey;
-        }
-        
-        .menu p {
-            text-align: justify;
-            padding: 5%;
-            color: white;
-        }
-        
-        .content {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .title {
-            color: red;
-            text-decoration: underline;
-            text-align: center;
-            margin: 5px;
-        }
-        
-        .buttons {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-            justify-content: space-around;
-        }
-        
-        .btn {
-            width: 100px;
-            padding: 5%;
-            background-color: blue;
-        }
-    </style>
-    <script>
-        let map;
-
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: {
-                    lat: 46.72,
-                    lng: -71.27
-                },
-                zoom: 12,
-            });
-        }
-
-        function over(selected) {
-            var selected = selected.id
-            document.getElementById(selected).style.backgroundColor = "white";
-        }
-
-        function left(selected) {
-            var selected = selected.id
-            document.getElementById(selected).style.backgroundColor = "blue";
-        }
-
-        function save() {
-            alert("You saved this map!")
-        }
-
-        function flashRed() {
-            document.getElementById("text").style.color = "red";
-            setTimeout(() => {
-                document.getElementById("text").style.color = "white";
-            }, 1000);
-
-
-        }
-    </script>
+    <link rel="stylesheet" href="static/css/styleSheet.css">
+    <title>Carte de Collecte</title>
 </head>
 
 <body class="body">
-    <div class="menu">
-        <H3>Menu</H3>
-        <p id="text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure
-            dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    <div class="menu_legend">
+        <H2>Statistiques</H2>
+        <p id="text">Nom</p>
 
         <div class="buttons">
-            <Button class="btn" id="btnSave" onmouseover="over(this);" onclick="save();" onmouseleave="left(this)">Save</Button>
-            <Button class="btn" id="btnCancel" onmouseover="over(this);" onclick="flashRed();" onmouseleave="left(this);">Cancel</Button>
+            <Button class="btn" id="btnSearch" onmouseover="over(this)" onclick="search()" onmouseleave="left(this)">Search</Button>
+            <Button class="btn" id="btnExtend" onmouseover="over(this)" onclick="extend()" onmouseleave="left(this)">Extend</Button>
+            <Button class="btn" id="btnSave" onmouseover="over(this)" onclick="save()" onmouseleave="left(this)">Save map</Button>
         </div>
     </div>
     <div class="content">
-        <h1 class="title">Page principale</h1>
-        <div id="map"></div>
+        <h1 class="title">Répartition des sapins collectés</h1>
+        <div class="map_zone" id="map">
+            <img src="static/image/map.png">
+        </div>
     </div>
-
+    <script src="static/js/script.js"></script>
 </body>
 
 </html>
