@@ -8,10 +8,20 @@
 .menu_legend {
     display: flex;
     flex-direction: column;
-    width: 20%;
+    width: 350px;
     height: 100%;
     text-align: center;
     background-color: grey;
+}
+
+.menu_legend .buttons {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    width: 100%;
 }
 
 .menu_legend h2 {
@@ -38,17 +48,6 @@
     text-align: center;
     margin: 5px;
     margin-bottom: 25px;
-}
-
-.buttons {
-    position: absolute;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    margin-bottom: 20px;
-    width: 16%;
 }
 
 .btn {
