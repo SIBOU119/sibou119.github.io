@@ -1,8 +1,14 @@
+#map {
+    width: 100%;
+    height: 750px;
+}
+
 .body {
     position: relative;
     display: flex;
     flex-direction: row;
     background-color: black;
+    height: 825px;
 }
 
 .menu_legend {
@@ -11,17 +17,16 @@
     width: 350px;
     height: 100%;
     text-align: center;
-    background-color: grey;
+    background-color: #404040;
 }
 
 .menu_legend .buttons {
-    position: relative;
+    position: absolute;
+    bottom: 0%;
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
-    justify-content: space-around;
     margin-bottom: 20px;
-    width: 100%;
+    width: 285px;
 }
 
 .menu_legend h2 {
@@ -54,7 +59,7 @@
     width: 90%;
     padding: 5%;
     margin: 10% 5% 0 5%;
-    background-color: #BBBBBB;
+    background-color: #808080;
 }
 
 .usertable {
@@ -95,6 +100,11 @@
     margin-top: 10px;
     font-size: larger;
     font-weight: bold;
+}
+
+#mouse-position {
+    color: #808080;
+    margin-left: 20px;
 }
 
 /*# sourceMappingURL=/style.e308ff8e.css.map */

@@ -190,1204 +190,7 @@ module.exports = reloadCSS;
         module.hot.dispose(reloadCSS);
         module.hot.accept(reloadCSS);
       
-},{"_css_loader":"node_modules/parcel-bundler/src/builtins/css-loader.js"}],"node_modules/ol/proj/Units.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = exports.METERS_PER_UNIT = void 0;
-
-/**
- * @module ol/proj/Units
- */
-
-/**
- * Projection units: `'degrees'`, `'ft'`, `'m'`, `'pixels'`, `'tile-pixels'` or
- * `'us-ft'`.
- * @enum {string}
- */
-var Units = {
-  /**
-   * Degrees
-   * @api
-   */
-  DEGREES: 'degrees',
-
-  /**
-   * Feet
-   * @api
-   */
-  FEET: 'ft',
-
-  /**
-   * Meters
-   * @api
-   */
-  METERS: 'm',
-
-  /**
-   * Pixels
-   * @api
-   */
-  PIXELS: 'pixels',
-
-  /**
-   * Tile Pixels
-   * @api
-   */
-  TILE_PIXELS: 'tile-pixels',
-
-  /**
-   * US Feet
-   * @api
-   */
-  USFEET: 'us-ft'
-};
-/**
- * Meters per unit lookup table.
- * @const
- * @type {Object<Units, number>}
- * @api
- */
-
-var METERS_PER_UNIT = {}; // use the radius of the Normal sphere
-
-exports.METERS_PER_UNIT = METERS_PER_UNIT;
-METERS_PER_UNIT[Units.DEGREES] = 2 * Math.PI * 6370997 / 360;
-METERS_PER_UNIT[Units.FEET] = 0.3048;
-METERS_PER_UNIT[Units.METERS] = 1;
-METERS_PER_UNIT[Units.USFEET] = 1200 / 3937;
-var _default = Units;
-exports.default = _default;
-},{}],"node_modules/ol/proj/Projection.js":[function(require,module,exports) {
-var global = arguments[3];
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _Units = require("./Units.js");
-
-/**
- * @module ol/proj/Projection
- */
-
-/**
- * @typedef {Object} Options
- * @property {string} code The SRS identifier code, e.g. `EPSG:4326`.
- * @property {import("./Units.js").default|string} [units] Units. Required unless a
- * proj4 projection is defined for `code`.
- * @property {import("../extent.js").Extent} [extent] The validity extent for the SRS.
- * @property {string} [axisOrientation='enu'] The axis orientation as specified in Proj4.
- * @property {boolean} [global=false] Whether the projection is valid for the whole globe.
- * @property {number} [metersPerUnit] The meters per unit for the SRS.
- * If not provided, the `units` are used to get the meters per unit from the {@link module:ol/proj/Units~METERS_PER_UNIT}
- * lookup table.
- * @property {import("../extent.js").Extent} [worldExtent] The world extent for the SRS.
- * @property {function(number, import("../coordinate.js").Coordinate):number} [getPointResolution]
- * Function to determine resolution at a point. The function is called with a
- * `{number}` view resolution and an `{import("../coordinate.js").Coordinate}` as arguments, and returns
- * the `{number}` resolution in projection units at the passed coordinate. If this is `undefined`,
- * the default {@link module:ol/proj#getPointResolution} function will be used.
- */
-
-/**
- * @classdesc
- * Projection definition class. One of these is created for each projection
- * supported in the application and stored in the {@link module:ol/proj} namespace.
- * You can use these in applications, but this is not required, as API params
- * and options use {@link module:ol/proj~ProjectionLike} which means the simple string
- * code will suffice.
- *
- * You can use {@link module:ol/proj~get} to retrieve the object for a particular
- * projection.
- *
- * The library includes definitions for `EPSG:4326` and `EPSG:3857`, together
- * with the following aliases:
- * * `EPSG:4326`: CRS:84, urn:ogc:def:crs:EPSG:6.6:4326,
- *     urn:ogc:def:crs:OGC:1.3:CRS84, urn:ogc:def:crs:OGC:2:84,
- *     http://www.opengis.net/gml/srs/epsg.xml#4326,
- *     urn:x-ogc:def:crs:EPSG:4326
- * * `EPSG:3857`: EPSG:102100, EPSG:102113, EPSG:900913,
- *     urn:ogc:def:crs:EPSG:6.18:3:3857,
- *     http://www.opengis.net/gml/srs/epsg.xml#3857
- *
- * If you use [proj4js](https://github.com/proj4js/proj4js), aliases can
- * be added using `proj4.defs()`. After all required projection definitions are
- * added, call the {@link module:ol/proj/proj4~register} function.
- *
- * @api
- */
-var Projection =
-/** @class */
-function () {
-  /**
-   * @param {Options} options Projection options.
-   */
-  function Projection(options) {
-    /**
-     * @private
-     * @type {string}
-     */
-    this.code_ = options.code;
-    /**
-     * Units of projected coordinates. When set to `TILE_PIXELS`, a
-     * `this.extent_` and `this.worldExtent_` must be configured properly for each
-     * tile.
-     * @private
-     * @type {import("./Units.js").default}
-     */
-
-    this.units_ =
-    /** @type {import("./Units.js").default} */
-    options.units;
-    /**
-     * Validity extent of the projection in projected coordinates. For projections
-     * with `TILE_PIXELS` units, this is the extent of the tile in
-     * tile pixel space.
-     * @private
-     * @type {import("../extent.js").Extent}
-     */
-
-    this.extent_ = options.extent !== undefined ? options.extent : null;
-    /**
-     * Extent of the world in EPSG:4326. For projections with
-     * `TILE_PIXELS` units, this is the extent of the tile in
-     * projected coordinate space.
-     * @private
-     * @type {import("../extent.js").Extent}
-     */
-
-    this.worldExtent_ = options.worldExtent !== undefined ? options.worldExtent : null;
-    /**
-     * @private
-     * @type {string}
-     */
-
-    this.axisOrientation_ = options.axisOrientation !== undefined ? options.axisOrientation : 'enu';
-    /**
-     * @private
-     * @type {boolean}
-     */
-
-    this.global_ = options.global !== undefined ? options.global : false;
-    /**
-     * @private
-     * @type {boolean}
-     */
-
-    this.canWrapX_ = !!(this.global_ && this.extent_);
-    /**
-     * @private
-     * @type {function(number, import("../coordinate.js").Coordinate):number|undefined}
-     */
-
-    this.getPointResolutionFunc_ = options.getPointResolution;
-    /**
-     * @private
-     * @type {import("../tilegrid/TileGrid.js").default}
-     */
-
-    this.defaultTileGrid_ = null;
-    /**
-     * @private
-     * @type {number|undefined}
-     */
-
-    this.metersPerUnit_ = options.metersPerUnit;
-  }
-  /**
-   * @return {boolean} The projection is suitable for wrapping the x-axis
-   */
-
-
-  Projection.prototype.canWrapX = function () {
-    return this.canWrapX_;
-  };
-  /**
-   * Get the code for this projection, e.g. 'EPSG:4326'.
-   * @return {string} Code.
-   * @api
-   */
-
-
-  Projection.prototype.getCode = function () {
-    return this.code_;
-  };
-  /**
-   * Get the validity extent for this projection.
-   * @return {import("../extent.js").Extent} Extent.
-   * @api
-   */
-
-
-  Projection.prototype.getExtent = function () {
-    return this.extent_;
-  };
-  /**
-   * Get the units of this projection.
-   * @return {import("./Units.js").default} Units.
-   * @api
-   */
-
-
-  Projection.prototype.getUnits = function () {
-    return this.units_;
-  };
-  /**
-   * Get the amount of meters per unit of this projection.  If the projection is
-   * not configured with `metersPerUnit` or a units identifier, the return is
-   * `undefined`.
-   * @return {number|undefined} Meters.
-   * @api
-   */
-
-
-  Projection.prototype.getMetersPerUnit = function () {
-    return this.metersPerUnit_ || _Units.METERS_PER_UNIT[this.units_];
-  };
-  /**
-   * Get the world extent for this projection.
-   * @return {import("../extent.js").Extent} Extent.
-   * @api
-   */
-
-
-  Projection.prototype.getWorldExtent = function () {
-    return this.worldExtent_;
-  };
-  /**
-   * Get the axis orientation of this projection.
-   * Example values are:
-   * enu - the default easting, northing, elevation.
-   * neu - northing, easting, up - useful for "lat/long" geographic coordinates,
-   *     or south orientated transverse mercator.
-   * wnu - westing, northing, up - some planetary coordinate systems have
-   *     "west positive" coordinate systems
-   * @return {string} Axis orientation.
-   * @api
-   */
-
-
-  Projection.prototype.getAxisOrientation = function () {
-    return this.axisOrientation_;
-  };
-  /**
-   * Is this projection a global projection which spans the whole world?
-   * @return {boolean} Whether the projection is global.
-   * @api
-   */
-
-
-  Projection.prototype.isGlobal = function () {
-    return this.global_;
-  };
-  /**
-   * Set if the projection is a global projection which spans the whole world
-   * @param {boolean} global Whether the projection is global.
-   * @api
-   */
-
-
-  Projection.prototype.setGlobal = function (global) {
-    this.global_ = global;
-    this.canWrapX_ = !!(global && this.extent_);
-  };
-  /**
-   * @return {import("../tilegrid/TileGrid.js").default} The default tile grid.
-   */
-
-
-  Projection.prototype.getDefaultTileGrid = function () {
-    return this.defaultTileGrid_;
-  };
-  /**
-   * @param {import("../tilegrid/TileGrid.js").default} tileGrid The default tile grid.
-   */
-
-
-  Projection.prototype.setDefaultTileGrid = function (tileGrid) {
-    this.defaultTileGrid_ = tileGrid;
-  };
-  /**
-   * Set the validity extent for this projection.
-   * @param {import("../extent.js").Extent} extent Extent.
-   * @api
-   */
-
-
-  Projection.prototype.setExtent = function (extent) {
-    this.extent_ = extent;
-    this.canWrapX_ = !!(this.global_ && extent);
-  };
-  /**
-   * Set the world extent for this projection.
-   * @param {import("../extent.js").Extent} worldExtent World extent
-   *     [minlon, minlat, maxlon, maxlat].
-   * @api
-   */
-
-
-  Projection.prototype.setWorldExtent = function (worldExtent) {
-    this.worldExtent_ = worldExtent;
-  };
-  /**
-   * Set the getPointResolution function (see {@link module:ol/proj~getPointResolution}
-   * for this projection.
-   * @param {function(number, import("../coordinate.js").Coordinate):number} func Function
-   * @api
-   */
-
-
-  Projection.prototype.setGetPointResolution = function (func) {
-    this.getPointResolutionFunc_ = func;
-  };
-  /**
-   * Get the custom point resolution function for this projection (if set).
-   * @return {function(number, import("../coordinate.js").Coordinate):number|undefined} The custom point
-   * resolution function (if set).
-   */
-
-
-  Projection.prototype.getPointResolutionFunc = function () {
-    return this.getPointResolutionFunc_;
-  };
-
-  return Projection;
-}();
-
-var _default = Projection;
-exports.default = _default;
-},{"./Units.js":"node_modules/ol/proj/Units.js"}],"node_modules/ol/math.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.clamp = clamp;
-exports.squaredSegmentDistance = squaredSegmentDistance;
-exports.squaredDistance = squaredDistance;
-exports.solveLinearSystem = solveLinearSystem;
-exports.toDegrees = toDegrees;
-exports.toRadians = toRadians;
-exports.modulo = modulo;
-exports.lerp = lerp;
-exports.log2 = exports.cosh = void 0;
-
-/**
- * @module ol/math
- */
-
-/**
- * Takes a number and clamps it to within the provided bounds.
- * @param {number} value The input number.
- * @param {number} min The minimum value to return.
- * @param {number} max The maximum value to return.
- * @return {number} The input number if it is within bounds, or the nearest
- *     number within the bounds.
- */
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-/**
- * Return the hyperbolic cosine of a given number. The method will use the
- * native `Math.cosh` function if it is available, otherwise the hyperbolic
- * cosine will be calculated via the reference implementation of the Mozilla
- * developer network.
- *
- * @param {number} x X.
- * @return {number} Hyperbolic cosine of x.
- */
-
-
-var cosh = function () {
-  // Wrapped in a iife, to save the overhead of checking for the native
-  // implementation on every invocation.
-  var cosh;
-
-  if ('cosh' in Math) {
-    // The environment supports the native Math.cosh function, use it…
-    cosh = Math.cosh;
-  } else {
-    // … else, use the reference implementation of MDN:
-    cosh = function (x) {
-      var y =
-      /** @type {Math} */
-      Math.exp(x);
-      return (y + 1 / y) / 2;
-    };
-  }
-
-  return cosh;
-}();
-/**
- * Return the base 2 logarithm of a given number. The method will use the
- * native `Math.log2` function if it is available, otherwise the base 2
- * logarithm will be calculated via the reference implementation of the
- * Mozilla developer network.
- *
- * @param {number} x X.
- * @return {number} Base 2 logarithm of x.
- */
-
-
-exports.cosh = cosh;
-
-var log2 = function () {
-  // Wrapped in a iife, to save the overhead of checking for the native
-  // implementation on every invocation.
-  var log2;
-
-  if ('log2' in Math) {
-    // The environment supports the native Math.log2 function, use it…
-    log2 = Math.log2;
-  } else {
-    // … else, use the reference implementation of MDN:
-    log2 = function (x) {
-      return Math.log(x) * Math.LOG2E;
-    };
-  }
-
-  return log2;
-}();
-/**
- * Returns the square of the closest distance between the point (x, y) and the
- * line segment (x1, y1) to (x2, y2).
- * @param {number} x X.
- * @param {number} y Y.
- * @param {number} x1 X1.
- * @param {number} y1 Y1.
- * @param {number} x2 X2.
- * @param {number} y2 Y2.
- * @return {number} Squared distance.
- */
-
-
-exports.log2 = log2;
-
-function squaredSegmentDistance(x, y, x1, y1, x2, y2) {
-  var dx = x2 - x1;
-  var dy = y2 - y1;
-
-  if (dx !== 0 || dy !== 0) {
-    var t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy);
-
-    if (t > 1) {
-      x1 = x2;
-      y1 = y2;
-    } else if (t > 0) {
-      x1 += dx * t;
-      y1 += dy * t;
-    }
-  }
-
-  return squaredDistance(x, y, x1, y1);
-}
-/**
- * Returns the square of the distance between the points (x1, y1) and (x2, y2).
- * @param {number} x1 X1.
- * @param {number} y1 Y1.
- * @param {number} x2 X2.
- * @param {number} y2 Y2.
- * @return {number} Squared distance.
- */
-
-
-function squaredDistance(x1, y1, x2, y2) {
-  var dx = x2 - x1;
-  var dy = y2 - y1;
-  return dx * dx + dy * dy;
-}
-/**
- * Solves system of linear equations using Gaussian elimination method.
- *
- * @param {Array<Array<number>>} mat Augmented matrix (n x n + 1 column)
- *                                     in row-major order.
- * @return {Array<number>} The resulting vector.
- */
-
-
-function solveLinearSystem(mat) {
-  var n = mat.length;
-
-  for (var i = 0; i < n; i++) {
-    // Find max in the i-th column (ignoring i - 1 first rows)
-    var maxRow = i;
-    var maxEl = Math.abs(mat[i][i]);
-
-    for (var r = i + 1; r < n; r++) {
-      var absValue = Math.abs(mat[r][i]);
-
-      if (absValue > maxEl) {
-        maxEl = absValue;
-        maxRow = r;
-      }
-    }
-
-    if (maxEl === 0) {
-      return null; // matrix is singular
-    } // Swap max row with i-th (current) row
-
-
-    var tmp = mat[maxRow];
-    mat[maxRow] = mat[i];
-    mat[i] = tmp; // Subtract the i-th row to make all the remaining rows 0 in the i-th column
-
-    for (var j = i + 1; j < n; j++) {
-      var coef = -mat[j][i] / mat[i][i];
-
-      for (var k = i; k < n + 1; k++) {
-        if (i == k) {
-          mat[j][k] = 0;
-        } else {
-          mat[j][k] += coef * mat[i][k];
-        }
-      }
-    }
-  } // Solve Ax=b for upper triangular matrix A (mat)
-
-
-  var x = new Array(n);
-
-  for (var l = n - 1; l >= 0; l--) {
-    x[l] = mat[l][n] / mat[l][l];
-
-    for (var m = l - 1; m >= 0; m--) {
-      mat[m][n] -= mat[m][l] * x[l];
-    }
-  }
-
-  return x;
-}
-/**
- * Converts radians to to degrees.
- *
- * @param {number} angleInRadians Angle in radians.
- * @return {number} Angle in degrees.
- */
-
-
-function toDegrees(angleInRadians) {
-  return angleInRadians * 180 / Math.PI;
-}
-/**
- * Converts degrees to radians.
- *
- * @param {number} angleInDegrees Angle in degrees.
- * @return {number} Angle in radians.
- */
-
-
-function toRadians(angleInDegrees) {
-  return angleInDegrees * Math.PI / 180;
-}
-/**
- * Returns the modulo of a / b, depending on the sign of b.
- *
- * @param {number} a Dividend.
- * @param {number} b Divisor.
- * @return {number} Modulo.
- */
-
-
-function modulo(a, b) {
-  var r = a % b;
-  return r * b < 0 ? r + b : r;
-}
-/**
- * Calculates the linearly interpolated value of x between a and b.
- *
- * @param {number} a Number
- * @param {number} b Number
- * @param {number} x Value to be interpolated.
- * @return {number} Interpolated value.
- */
-
-
-function lerp(a, b, x) {
-  return a + x * (b - a);
-}
-},{}],"node_modules/ol/proj/epsg3857.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.fromEPSG4326 = fromEPSG4326;
-exports.toEPSG4326 = toEPSG4326;
-exports.PROJECTIONS = exports.MAX_SAFE_Y = exports.WORLD_EXTENT = exports.EXTENT = exports.HALF_SIZE = exports.RADIUS = void 0;
-
-var _Projection = _interopRequireDefault(require("./Projection.js"));
-
-var _Units = _interopRequireDefault(require("./Units.js"));
-
-var _math = require("../math.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/proj/epsg3857
- */
-
-
-/**
- * Radius of WGS84 sphere
- *
- * @const
- * @type {number}
- */
-var RADIUS = 6378137;
-/**
- * @const
- * @type {number}
- */
-
-exports.RADIUS = RADIUS;
-var HALF_SIZE = Math.PI * RADIUS;
-/**
- * @const
- * @type {import("../extent.js").Extent}
- */
-
-exports.HALF_SIZE = HALF_SIZE;
-var EXTENT = [-HALF_SIZE, -HALF_SIZE, HALF_SIZE, HALF_SIZE];
-/**
- * @const
- * @type {import("../extent.js").Extent}
- */
-
-exports.EXTENT = EXTENT;
-var WORLD_EXTENT = [-180, -85, 180, 85];
-/**
- * Maximum safe value in y direction
- * @const
- * @type {number}
- */
-
-exports.WORLD_EXTENT = WORLD_EXTENT;
-var MAX_SAFE_Y = RADIUS * Math.log(Math.tan(Math.PI / 2));
-/**
- * @classdesc
- * Projection object for web/spherical Mercator (EPSG:3857).
- */
-
-exports.MAX_SAFE_Y = MAX_SAFE_Y;
-
-var EPSG3857Projection =
-/** @class */
-function (_super) {
-  __extends(EPSG3857Projection, _super);
-  /**
-   * @param {string} code Code.
-   */
-
-
-  function EPSG3857Projection(code) {
-    return _super.call(this, {
-      code: code,
-      units: _Units.default.METERS,
-      extent: EXTENT,
-      global: true,
-      worldExtent: WORLD_EXTENT,
-      getPointResolution: function (resolution, point) {
-        return resolution / (0, _math.cosh)(point[1] / RADIUS);
-      }
-    }) || this;
-  }
-
-  return EPSG3857Projection;
-}(_Projection.default);
-/**
- * Projections equal to EPSG:3857.
- *
- * @const
- * @type {Array<import("./Projection.js").default>}
- */
-
-
-var PROJECTIONS = [new EPSG3857Projection('EPSG:3857'), new EPSG3857Projection('EPSG:102100'), new EPSG3857Projection('EPSG:102113'), new EPSG3857Projection('EPSG:900913'), new EPSG3857Projection('http://www.opengis.net/gml/srs/epsg.xml#3857')];
-/**
- * Transformation from EPSG:4326 to EPSG:3857.
- *
- * @param {Array<number>} input Input array of coordinate values.
- * @param {Array<number>=} opt_output Output array of coordinate values.
- * @param {number=} opt_dimension Dimension (default is `2`).
- * @return {Array<number>} Output array of coordinate values.
- */
-
-exports.PROJECTIONS = PROJECTIONS;
-
-function fromEPSG4326(input, opt_output, opt_dimension) {
-  var length = input.length;
-  var dimension = opt_dimension > 1 ? opt_dimension : 2;
-  var output = opt_output;
-
-  if (output === undefined) {
-    if (dimension > 2) {
-      // preserve values beyond second dimension
-      output = input.slice();
-    } else {
-      output = new Array(length);
-    }
-  }
-
-  for (var i = 0; i < length; i += dimension) {
-    output[i] = HALF_SIZE * input[i] / 180;
-    var y = RADIUS * Math.log(Math.tan(Math.PI * (+input[i + 1] + 90) / 360));
-
-    if (y > MAX_SAFE_Y) {
-      y = MAX_SAFE_Y;
-    } else if (y < -MAX_SAFE_Y) {
-      y = -MAX_SAFE_Y;
-    }
-
-    output[i + 1] = y;
-  }
-
-  return output;
-}
-/**
- * Transformation from EPSG:3857 to EPSG:4326.
- *
- * @param {Array<number>} input Input array of coordinate values.
- * @param {Array<number>=} opt_output Output array of coordinate values.
- * @param {number=} opt_dimension Dimension (default is `2`).
- * @return {Array<number>} Output array of coordinate values.
- */
-
-
-function toEPSG4326(input, opt_output, opt_dimension) {
-  var length = input.length;
-  var dimension = opt_dimension > 1 ? opt_dimension : 2;
-  var output = opt_output;
-
-  if (output === undefined) {
-    if (dimension > 2) {
-      // preserve values beyond second dimension
-      output = input.slice();
-    } else {
-      output = new Array(length);
-    }
-  }
-
-  for (var i = 0; i < length; i += dimension) {
-    output[i] = 180 * input[i] / HALF_SIZE;
-    output[i + 1] = 360 * Math.atan(Math.exp(input[i + 1] / RADIUS)) / Math.PI - 90;
-  }
-
-  return output;
-}
-},{"./Projection.js":"node_modules/ol/proj/Projection.js","./Units.js":"node_modules/ol/proj/Units.js","../math.js":"node_modules/ol/math.js"}],"node_modules/ol/proj/epsg4326.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.PROJECTIONS = exports.METERS_PER_UNIT = exports.EXTENT = exports.RADIUS = void 0;
-
-var _Projection = _interopRequireDefault(require("./Projection.js"));
-
-var _Units = _interopRequireDefault(require("./Units.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/proj/epsg4326
- */
-
-
-/**
- * Semi-major radius of the WGS84 ellipsoid.
- *
- * @const
- * @type {number}
- */
-var RADIUS = 6378137;
-/**
- * Extent of the EPSG:4326 projection which is the whole world.
- *
- * @const
- * @type {import("../extent.js").Extent}
- */
-
-exports.RADIUS = RADIUS;
-var EXTENT = [-180, -90, 180, 90];
-/**
- * @const
- * @type {number}
- */
-
-exports.EXTENT = EXTENT;
-var METERS_PER_UNIT = Math.PI * RADIUS / 180;
-/**
- * @classdesc
- * Projection object for WGS84 geographic coordinates (EPSG:4326).
- *
- * Note that OpenLayers does not strictly comply with the EPSG definition.
- * The EPSG registry defines 4326 as a CRS for Latitude,Longitude (y,x).
- * OpenLayers treats EPSG:4326 as a pseudo-projection, with x,y coordinates.
- */
-
-exports.METERS_PER_UNIT = METERS_PER_UNIT;
-
-var EPSG4326Projection =
-/** @class */
-function (_super) {
-  __extends(EPSG4326Projection, _super);
-  /**
-   * @param {string} code Code.
-   * @param {string=} opt_axisOrientation Axis orientation.
-   */
-
-
-  function EPSG4326Projection(code, opt_axisOrientation) {
-    return _super.call(this, {
-      code: code,
-      units: _Units.default.DEGREES,
-      extent: EXTENT,
-      axisOrientation: opt_axisOrientation,
-      global: true,
-      metersPerUnit: METERS_PER_UNIT,
-      worldExtent: EXTENT
-    }) || this;
-  }
-
-  return EPSG4326Projection;
-}(_Projection.default);
-/**
- * Projections equal to EPSG:4326.
- *
- * @const
- * @type {Array<import("./Projection.js").default>}
- */
-
-
-var PROJECTIONS = [new EPSG4326Projection('CRS:84'), new EPSG4326Projection('EPSG:4326', 'neu'), new EPSG4326Projection('urn:ogc:def:crs:OGC:1.3:CRS84'), new EPSG4326Projection('urn:ogc:def:crs:OGC:2:84'), new EPSG4326Projection('http://www.opengis.net/gml/srs/epsg.xml#4326', 'neu')];
-exports.PROJECTIONS = PROJECTIONS;
-},{"./Projection.js":"node_modules/ol/proj/Projection.js","./Units.js":"node_modules/ol/proj/Units.js"}],"node_modules/ol/proj/projections.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.clear = clear;
-exports.get = get;
-exports.add = add;
-
-/**
- * @module ol/proj/projections
- */
-
-/**
- * @type {Object<string, import("./Projection.js").default>}
- */
-var cache = {};
-/**
- * Clear the projections cache.
- */
-
-function clear() {
-  cache = {};
-}
-/**
- * Get a cached projection by code.
- * @param {string} code The code for the projection.
- * @return {import("./Projection.js").default} The projection (if cached).
- */
-
-
-function get(code) {
-  return cache[code] || cache[code.replace(/urn:(x-)?ogc:def:crs:EPSG:(.*:)?(\w+)$/, 'EPSG:$3')] || null;
-}
-/**
- * Add a projection to the cache.
- * @param {string} code The projection code.
- * @param {import("./Projection.js").default} projection The projection to cache.
- */
-
-
-function add(code, projection) {
-  cache[code] = projection;
-}
-},{}],"node_modules/ol/obj.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.clear = clear;
-exports.isEmpty = isEmpty;
-exports.getValues = exports.assign = void 0;
-
-/**
- * @module ol/obj
- */
-
-/**
- * Polyfill for Object.assign().  Assigns enumerable and own properties from
- * one or more source objects to a target object.
- * See https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/assign.
- *
- * @param {!Object} target The target object.
- * @param {...Object} var_sources The source object(s).
- * @return {!Object} The modified target object.
- */
-var assign = typeof Object.assign === 'function' ? Object.assign : function (target, var_sources) {
-  if (target === undefined || target === null) {
-    throw new TypeError('Cannot convert undefined or null to object');
-  }
-
-  var output = Object(target);
-
-  for (var i = 1, ii = arguments.length; i < ii; ++i) {
-    var source = arguments[i];
-
-    if (source !== undefined && source !== null) {
-      for (var key in source) {
-        if (source.hasOwnProperty(key)) {
-          output[key] = source[key];
-        }
-      }
-    }
-  }
-
-  return output;
-};
-/**
- * Removes all properties from an object.
- * @param {Object} object The object to clear.
- */
-
-exports.assign = assign;
-
-function clear(object) {
-  for (var property in object) {
-    delete object[property];
-  }
-}
-/**
- * Polyfill for Object.values().  Get an array of property values from an object.
- * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/values
- *
- * @param {!Object<K,V>} object The object from which to get the values.
- * @return {!Array<V>} The property values.
- * @template K,V
- */
-
-
-var getValues = typeof Object.values === 'function' ? Object.values : function (object) {
-  var values = [];
-
-  for (var property in object) {
-    values.push(object[property]);
-  }
-
-  return values;
-};
-/**
- * Determine if an object has any properties.
- * @param {Object} object The object to check.
- * @return {boolean} The object is empty.
- */
-
-exports.getValues = getValues;
-
-function isEmpty(object) {
-  var property;
-
-  for (property in object) {
-    return false;
-  }
-
-  return !property;
-}
-},{}],"node_modules/ol/proj/transforms.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.clear = clear;
-exports.add = add;
-exports.remove = remove;
-exports.get = get;
-
-var _obj = require("../obj.js");
-
-/**
- * @module ol/proj/transforms
- */
-
-/**
- * @private
- * @type {!Object<string, Object<string, import("../proj.js").TransformFunction>>}
- */
-var transforms = {};
-/**
- * Clear the transform cache.
- */
-
-function clear() {
-  transforms = {};
-}
-/**
- * Registers a conversion function to convert coordinates from the source
- * projection to the destination projection.
- *
- * @param {import("./Projection.js").default} source Source.
- * @param {import("./Projection.js").default} destination Destination.
- * @param {import("../proj.js").TransformFunction} transformFn Transform.
- */
-
-
-function add(source, destination, transformFn) {
-  var sourceCode = source.getCode();
-  var destinationCode = destination.getCode();
-
-  if (!(sourceCode in transforms)) {
-    transforms[sourceCode] = {};
-  }
-
-  transforms[sourceCode][destinationCode] = transformFn;
-}
-/**
- * Unregisters the conversion function to convert coordinates from the source
- * projection to the destination projection.  This method is used to clean up
- * cached transforms during testing.
- *
- * @param {import("./Projection.js").default} source Source projection.
- * @param {import("./Projection.js").default} destination Destination projection.
- * @return {import("../proj.js").TransformFunction} transformFn The unregistered transform.
- */
-
-
-function remove(source, destination) {
-  var sourceCode = source.getCode();
-  var destinationCode = destination.getCode();
-  var transform = transforms[sourceCode][destinationCode];
-  delete transforms[sourceCode][destinationCode];
-
-  if ((0, _obj.isEmpty)(transforms[sourceCode])) {
-    delete transforms[sourceCode];
-  }
-
-  return transform;
-}
-/**
- * Get a transform given a source code and a destination code.
- * @param {string} sourceCode The code for the source projection.
- * @param {string} destinationCode The code for the destination projection.
- * @return {import("../proj.js").TransformFunction|undefined} The transform function (if found).
- */
-
-
-function get(sourceCode, destinationCode) {
-  var transform;
-
-  if (sourceCode in transforms && destinationCode in transforms[sourceCode]) {
-    transform = transforms[sourceCode][destinationCode];
-  }
-
-  return transform;
-}
-},{"../obj.js":"node_modules/ol/obj.js"}],"node_modules/ol/extent/Corner.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * @module ol/extent/Corner
- */
-
-/**
- * Extent corner.
- * @enum {string}
- */
-var _default = {
-  BOTTOM_LEFT: 'bottom-left',
-  BOTTOM_RIGHT: 'bottom-right',
-  TOP_LEFT: 'top-left',
-  TOP_RIGHT: 'top-right'
-};
-exports.default = _default;
-},{}],"node_modules/ol/extent/Relationship.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * @module ol/extent/Relationship
- */
-
-/**
- * Relationship to an extent.
- * @enum {number}
- */
-var _default = {
-  UNKNOWN: 0,
-  INTERSECTING: 1,
-  ABOVE: 2,
-  RIGHT: 4,
-  BELOW: 8,
-  LEFT: 16
-};
-exports.default = _default;
-},{}],"node_modules/ol/util.js":[function(require,module,exports) {
+},{"_css_loader":"node_modules/parcel-bundler/src/builtins/css-loader.js"}],"node_modules/ol/util.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1524,7 +327,1959 @@ function (_super) {
 
 var _default = AssertionError;
 exports.default = _default;
-},{"./util.js":"node_modules/ol/util.js"}],"node_modules/ol/asserts.js":[function(require,module,exports) {
+},{"./util.js":"node_modules/ol/util.js"}],"node_modules/ol/events/Event.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.stopPropagation = stopPropagation;
+exports.preventDefault = preventDefault;
+exports.default = void 0;
+
+/**
+ * @module ol/events/Event
+ */
+
+/**
+ * @classdesc
+ * Stripped down implementation of the W3C DOM Level 2 Event interface.
+ * See https://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-interface.
+ *
+ * This implementation only provides `type` and `target` properties, and
+ * `stopPropagation` and `preventDefault` methods. It is meant as base class
+ * for higher level events defined in the library, and works with
+ * {@link module:ol/events/Target~Target}.
+ */
+var BaseEvent =
+/** @class */
+function () {
+  /**
+   * @param {string} type Type.
+   */
+  function BaseEvent(type) {
+    /**
+     * @type {boolean}
+     */
+    this.propagationStopped;
+    /**
+     * The event type.
+     * @type {string}
+     * @api
+     */
+
+    this.type = type;
+    /**
+     * The event target.
+     * @type {Object}
+     * @api
+     */
+
+    this.target = null;
+  }
+  /**
+   * Stop event propagation.
+   * @api
+   */
+
+
+  BaseEvent.prototype.preventDefault = function () {
+    this.propagationStopped = true;
+  };
+  /**
+   * Stop event propagation.
+   * @api
+   */
+
+
+  BaseEvent.prototype.stopPropagation = function () {
+    this.propagationStopped = true;
+  };
+
+  return BaseEvent;
+}();
+/**
+ * @param {Event|import("./Event.js").default} evt Event
+ */
+
+
+function stopPropagation(evt) {
+  evt.stopPropagation();
+}
+/**
+ * @param {Event|import("./Event.js").default} evt Event
+ */
+
+
+function preventDefault(evt) {
+  evt.preventDefault();
+}
+
+var _default = BaseEvent;
+exports.default = _default;
+},{}],"node_modules/ol/ObjectEventType.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/ObjectEventType
+ */
+
+/**
+ * @enum {string}
+ */
+var _default = {
+  /**
+   * Triggered when a property is changed.
+   * @event module:ol/Object.ObjectEvent#propertychange
+   * @api
+   */
+  PROPERTYCHANGE: 'propertychange'
+};
+exports.default = _default;
+},{}],"node_modules/ol/Disposable.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/Disposable
+ */
+
+/**
+ * @classdesc
+ * Objects that need to clean up after themselves.
+ */
+var Disposable =
+/** @class */
+function () {
+  function Disposable() {
+    /**
+     * The object has already been disposed.
+     * @type {boolean}
+     * @protected
+     */
+    this.disposed = false;
+  }
+  /**
+   * Clean up.
+   */
+
+
+  Disposable.prototype.dispose = function () {
+    if (!this.disposed) {
+      this.disposed = true;
+      this.disposeInternal();
+    }
+  };
+  /**
+   * Extension point for disposable objects.
+   * @protected
+   */
+
+
+  Disposable.prototype.disposeInternal = function () {};
+
+  return Disposable;
+}();
+
+var _default = Disposable;
+exports.default = _default;
+},{}],"node_modules/ol/array.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.binarySearch = binarySearch;
+exports.numberSafeCompareFunction = numberSafeCompareFunction;
+exports.includes = includes;
+exports.linearFindNearest = linearFindNearest;
+exports.reverseSubArray = reverseSubArray;
+exports.extend = extend;
+exports.remove = remove;
+exports.find = find;
+exports.equals = equals;
+exports.stableSort = stableSort;
+exports.findIndex = findIndex;
+exports.isSorted = isSorted;
+
+/**
+ * @module ol/array
+ */
+
+/**
+ * Performs a binary search on the provided sorted list and returns the index of the item if found. If it can't be found it'll return -1.
+ * https://github.com/darkskyapp/binary-search
+ *
+ * @param {Array<*>} haystack Items to search through.
+ * @param {*} needle The item to look for.
+ * @param {Function=} opt_comparator Comparator function.
+ * @return {number} The index of the item if found, -1 if not.
+ */
+function binarySearch(haystack, needle, opt_comparator) {
+  var mid, cmp;
+  var comparator = opt_comparator || numberSafeCompareFunction;
+  var low = 0;
+  var high = haystack.length;
+  var found = false;
+
+  while (low < high) {
+    /* Note that "(low + high) >>> 1" may overflow, and results in a typecast
+     * to double (which gives the wrong results). */
+    mid = low + (high - low >> 1);
+    cmp = +comparator(haystack[mid], needle);
+
+    if (cmp < 0.0) {
+      /* Too low. */
+      low = mid + 1;
+    } else {
+      /* Key found or too high */
+      high = mid;
+      found = !cmp;
+    }
+  }
+  /* Key not found. */
+
+
+  return found ? low : ~low;
+}
+/**
+ * Compare function for array sort that is safe for numbers.
+ * @param {*} a The first object to be compared.
+ * @param {*} b The second object to be compared.
+ * @return {number} A negative number, zero, or a positive number as the first
+ *     argument is less than, equal to, or greater than the second.
+ */
+
+
+function numberSafeCompareFunction(a, b) {
+  return a > b ? 1 : a < b ? -1 : 0;
+}
+/**
+ * Whether the array contains the given object.
+ * @param {Array<*>} arr The array to test for the presence of the element.
+ * @param {*} obj The object for which to test.
+ * @return {boolean} The object is in the array.
+ */
+
+
+function includes(arr, obj) {
+  return arr.indexOf(obj) >= 0;
+}
+/**
+ * @param {Array<number>} arr Array.
+ * @param {number} target Target.
+ * @param {number} direction 0 means return the nearest, > 0
+ *    means return the largest nearest, < 0 means return the
+ *    smallest nearest.
+ * @return {number} Index.
+ */
+
+
+function linearFindNearest(arr, target, direction) {
+  var n = arr.length;
+
+  if (arr[0] <= target) {
+    return 0;
+  } else if (target <= arr[n - 1]) {
+    return n - 1;
+  } else {
+    var i = void 0;
+
+    if (direction > 0) {
+      for (i = 1; i < n; ++i) {
+        if (arr[i] < target) {
+          return i - 1;
+        }
+      }
+    } else if (direction < 0) {
+      for (i = 1; i < n; ++i) {
+        if (arr[i] <= target) {
+          return i;
+        }
+      }
+    } else {
+      for (i = 1; i < n; ++i) {
+        if (arr[i] == target) {
+          return i;
+        } else if (arr[i] < target) {
+          if (arr[i - 1] - target < target - arr[i]) {
+            return i - 1;
+          } else {
+            return i;
+          }
+        }
+      }
+    }
+
+    return n - 1;
+  }
+}
+/**
+ * @param {Array<*>} arr Array.
+ * @param {number} begin Begin index.
+ * @param {number} end End index.
+ */
+
+
+function reverseSubArray(arr, begin, end) {
+  while (begin < end) {
+    var tmp = arr[begin];
+    arr[begin] = arr[end];
+    arr[end] = tmp;
+    ++begin;
+    --end;
+  }
+}
+/**
+ * @param {Array<VALUE>} arr The array to modify.
+ * @param {!Array<VALUE>|VALUE} data The elements or arrays of elements to add to arr.
+ * @template VALUE
+ */
+
+
+function extend(arr, data) {
+  var extension = Array.isArray(data) ? data : [data];
+  var length = extension.length;
+
+  for (var i = 0; i < length; i++) {
+    arr[arr.length] = extension[i];
+  }
+}
+/**
+ * @param {Array<VALUE>} arr The array to modify.
+ * @param {VALUE} obj The element to remove.
+ * @template VALUE
+ * @return {boolean} If the element was removed.
+ */
+
+
+function remove(arr, obj) {
+  var i = arr.indexOf(obj);
+  var found = i > -1;
+
+  if (found) {
+    arr.splice(i, 1);
+  }
+
+  return found;
+}
+/**
+ * @param {Array<VALUE>} arr The array to search in.
+ * @param {function(VALUE, number, ?) : boolean} func The function to compare.
+ * @template VALUE
+ * @return {VALUE|null} The element found or null.
+ */
+
+
+function find(arr, func) {
+  var length = arr.length >>> 0;
+  var value;
+
+  for (var i = 0; i < length; i++) {
+    value = arr[i];
+
+    if (func(value, i, arr)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+/**
+ * @param {Array|Uint8ClampedArray} arr1 The first array to compare.
+ * @param {Array|Uint8ClampedArray} arr2 The second array to compare.
+ * @return {boolean} Whether the two arrays are equal.
+ */
+
+
+function equals(arr1, arr2) {
+  var len1 = arr1.length;
+
+  if (len1 !== arr2.length) {
+    return false;
+  }
+
+  for (var i = 0; i < len1; i++) {
+    if (arr1[i] !== arr2[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+/**
+ * Sort the passed array such that the relative order of equal elements is preverved.
+ * See https://en.wikipedia.org/wiki/Sorting_algorithm#Stability for details.
+ * @param {Array<*>} arr The array to sort (modifies original).
+ * @param {!function(*, *): number} compareFnc Comparison function.
+ * @api
+ */
+
+
+function stableSort(arr, compareFnc) {
+  var length = arr.length;
+  var tmp = Array(arr.length);
+  var i;
+
+  for (i = 0; i < length; i++) {
+    tmp[i] = {
+      index: i,
+      value: arr[i]
+    };
+  }
+
+  tmp.sort(function (a, b) {
+    return compareFnc(a.value, b.value) || a.index - b.index;
+  });
+
+  for (i = 0; i < arr.length; i++) {
+    arr[i] = tmp[i].value;
+  }
+}
+/**
+ * @param {Array<*>} arr The array to search in.
+ * @param {Function} func Comparison function.
+ * @return {number} Return index.
+ */
+
+
+function findIndex(arr, func) {
+  var index;
+  var found = !arr.every(function (el, idx) {
+    index = idx;
+    return !func(el, idx, arr);
+  });
+  return found ? index : -1;
+}
+/**
+ * @param {Array<*>} arr The array to test.
+ * @param {Function=} opt_func Comparison function.
+ * @param {boolean=} opt_strict Strictly sorted (default false).
+ * @return {boolean} Return index.
+ */
+
+
+function isSorted(arr, opt_func, opt_strict) {
+  var compare = opt_func || numberSafeCompareFunction;
+  return arr.every(function (currentVal, index) {
+    if (index === 0) {
+      return true;
+    }
+
+    var res = compare(arr[index - 1], currentVal);
+    return !(res > 0 || opt_strict && res === 0);
+  });
+}
+},{}],"node_modules/ol/functions.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.TRUE = TRUE;
+exports.FALSE = FALSE;
+exports.VOID = VOID;
+exports.memoizeOne = memoizeOne;
+
+var _array = require("./array.js");
+
+/**
+ * @module ol/functions
+ */
+
+/**
+ * Always returns true.
+ * @returns {boolean} true.
+ */
+function TRUE() {
+  return true;
+}
+/**
+ * Always returns false.
+ * @returns {boolean} false.
+ */
+
+
+function FALSE() {
+  return false;
+}
+/**
+ * A reusable function, used e.g. as a default for callbacks.
+ *
+ * @return {void} Nothing.
+ */
+
+
+function VOID() {}
+/**
+ * Wrap a function in another function that remembers the last return.  If the
+ * returned function is called twice in a row with the same arguments and the same
+ * this object, it will return the value from the first call in the second call.
+ *
+ * @param {function(...any): ReturnType} fn The function to memoize.
+ * @return {function(...any): ReturnType} The memoized function.
+ * @template ReturnType
+ */
+
+
+function memoizeOne(fn) {
+  var called = false;
+  /** @type {ReturnType} */
+
+  var lastResult;
+  /** @type {Array<any>} */
+
+  var lastArgs;
+  var lastThis;
+  return function () {
+    var nextArgs = Array.prototype.slice.call(arguments);
+
+    if (!called || this !== lastThis || !(0, _array.equals)(nextArgs, lastArgs)) {
+      called = true;
+      lastThis = this;
+      lastArgs = nextArgs;
+      lastResult = fn.apply(this, arguments);
+    }
+
+    return lastResult;
+  };
+}
+},{"./array.js":"node_modules/ol/array.js"}],"node_modules/ol/obj.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.clear = clear;
+exports.isEmpty = isEmpty;
+exports.getValues = exports.assign = void 0;
+
+/**
+ * @module ol/obj
+ */
+
+/**
+ * Polyfill for Object.assign().  Assigns enumerable and own properties from
+ * one or more source objects to a target object.
+ * See https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Object/assign.
+ *
+ * @param {!Object} target The target object.
+ * @param {...Object} var_sources The source object(s).
+ * @return {!Object} The modified target object.
+ */
+var assign = typeof Object.assign === 'function' ? Object.assign : function (target, var_sources) {
+  if (target === undefined || target === null) {
+    throw new TypeError('Cannot convert undefined or null to object');
+  }
+
+  var output = Object(target);
+
+  for (var i = 1, ii = arguments.length; i < ii; ++i) {
+    var source = arguments[i];
+
+    if (source !== undefined && source !== null) {
+      for (var key in source) {
+        if (source.hasOwnProperty(key)) {
+          output[key] = source[key];
+        }
+      }
+    }
+  }
+
+  return output;
+};
+/**
+ * Removes all properties from an object.
+ * @param {Object} object The object to clear.
+ */
+
+exports.assign = assign;
+
+function clear(object) {
+  for (var property in object) {
+    delete object[property];
+  }
+}
+/**
+ * Polyfill for Object.values().  Get an array of property values from an object.
+ * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/values
+ *
+ * @param {!Object<K,V>} object The object from which to get the values.
+ * @return {!Array<V>} The property values.
+ * @template K,V
+ */
+
+
+var getValues = typeof Object.values === 'function' ? Object.values : function (object) {
+  var values = [];
+
+  for (var property in object) {
+    values.push(object[property]);
+  }
+
+  return values;
+};
+/**
+ * Determine if an object has any properties.
+ * @param {Object} object The object to check.
+ * @return {boolean} The object is empty.
+ */
+
+exports.getValues = getValues;
+
+function isEmpty(object) {
+  var property;
+
+  for (property in object) {
+    return false;
+  }
+
+  return !property;
+}
+},{}],"node_modules/ol/events/Target.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _Disposable = _interopRequireDefault(require("../Disposable.js"));
+
+var _Event = _interopRequireDefault(require("./Event.js"));
+
+var _functions = require("../functions.js");
+
+var _obj = require("../obj.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/events/Target
+ */
+
+
+/**
+ * @typedef {EventTarget|Target} EventTargetLike
+ */
+
+/**
+ * @classdesc
+ * A simplified implementation of the W3C DOM Level 2 EventTarget interface.
+ * See https://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html#Events-EventTarget.
+ *
+ * There are two important simplifications compared to the specification:
+ *
+ * 1. The handling of `useCapture` in `addEventListener` and
+ *    `removeEventListener`. There is no real capture model.
+ * 2. The handling of `stopPropagation` and `preventDefault` on `dispatchEvent`.
+ *    There is no event target hierarchy. When a listener calls
+ *    `stopPropagation` or `preventDefault` on an event object, it means that no
+ *    more listeners after this one will be called. Same as when the listener
+ *    returns false.
+ */
+var Target =
+/** @class */
+function (_super) {
+  __extends(Target, _super);
+  /**
+   * @param {*=} opt_target Default event target for dispatched events.
+   */
+
+
+  function Target(opt_target) {
+    var _this = _super.call(this) || this;
+    /**
+     * @private
+     * @type {*}
+     */
+
+
+    _this.eventTarget_ = opt_target;
+    /**
+     * @private
+     * @type {Object<string, number>}
+     */
+
+    _this.pendingRemovals_ = null;
+    /**
+     * @private
+     * @type {Object<string, number>}
+     */
+
+    _this.dispatching_ = null;
+    /**
+     * @private
+     * @type {Object<string, Array<import("../events.js").Listener>>}
+     */
+
+    _this.listeners_ = null;
+    return _this;
+  }
+  /**
+   * @param {string} type Type.
+   * @param {import("../events.js").Listener} listener Listener.
+   */
+
+
+  Target.prototype.addEventListener = function (type, listener) {
+    if (!type || !listener) {
+      return;
+    }
+
+    var listeners = this.listeners_ || (this.listeners_ = {});
+    var listenersForType = listeners[type] || (listeners[type] = []);
+
+    if (listenersForType.indexOf(listener) === -1) {
+      listenersForType.push(listener);
+    }
+  };
+  /**
+   * Dispatches an event and calls all listeners listening for events
+   * of this type. The event parameter can either be a string or an
+   * Object with a `type` property.
+   *
+   * @param {import("./Event.js").default|string} event Event object.
+   * @return {boolean|undefined} `false` if anyone called preventDefault on the
+   *     event object or if any of the listeners returned false.
+   * @api
+   */
+
+
+  Target.prototype.dispatchEvent = function (event) {
+    /** @type {import("./Event.js").default|Event} */
+    var evt = typeof event === 'string' ? new _Event.default(event) : event;
+    var type = evt.type;
+
+    if (!evt.target) {
+      evt.target = this.eventTarget_ || this;
+    }
+
+    var listeners = this.listeners_ && this.listeners_[type];
+    var propagate;
+
+    if (listeners) {
+      var dispatching = this.dispatching_ || (this.dispatching_ = {});
+      var pendingRemovals = this.pendingRemovals_ || (this.pendingRemovals_ = {});
+
+      if (!(type in dispatching)) {
+        dispatching[type] = 0;
+        pendingRemovals[type] = 0;
+      }
+
+      ++dispatching[type];
+
+      for (var i = 0, ii = listeners.length; i < ii; ++i) {
+        if ('handleEvent' in listeners[i]) {
+          propagate =
+          /** @type {import("../events.js").ListenerObject} */
+          listeners[i].handleEvent(evt);
+        } else {
+          propagate =
+          /** @type {import("../events.js").ListenerFunction} */
+          listeners[i].call(this, evt);
+        }
+
+        if (propagate === false || evt.propagationStopped) {
+          propagate = false;
+          break;
+        }
+      }
+
+      --dispatching[type];
+
+      if (dispatching[type] === 0) {
+        var pr = pendingRemovals[type];
+        delete pendingRemovals[type];
+
+        while (pr--) {
+          this.removeEventListener(type, _functions.VOID);
+        }
+
+        delete dispatching[type];
+      }
+
+      return propagate;
+    }
+  };
+  /**
+   * Clean up.
+   */
+
+
+  Target.prototype.disposeInternal = function () {
+    this.listeners_ && (0, _obj.clear)(this.listeners_);
+  };
+  /**
+   * Get the listeners for a specified event type. Listeners are returned in the
+   * order that they will be called in.
+   *
+   * @param {string} type Type.
+   * @return {Array<import("../events.js").Listener>|undefined} Listeners.
+   */
+
+
+  Target.prototype.getListeners = function (type) {
+    return this.listeners_ && this.listeners_[type] || undefined;
+  };
+  /**
+   * @param {string=} opt_type Type. If not provided,
+   *     `true` will be returned if this event target has any listeners.
+   * @return {boolean} Has listeners.
+   */
+
+
+  Target.prototype.hasListener = function (opt_type) {
+    if (!this.listeners_) {
+      return false;
+    }
+
+    return opt_type ? opt_type in this.listeners_ : Object.keys(this.listeners_).length > 0;
+  };
+  /**
+   * @param {string} type Type.
+   * @param {import("../events.js").Listener} listener Listener.
+   */
+
+
+  Target.prototype.removeEventListener = function (type, listener) {
+    var listeners = this.listeners_ && this.listeners_[type];
+
+    if (listeners) {
+      var index = listeners.indexOf(listener);
+
+      if (index !== -1) {
+        if (this.pendingRemovals_ && type in this.pendingRemovals_) {
+          // make listener a no-op, and remove later in #dispatchEvent()
+          listeners[index] = _functions.VOID;
+          ++this.pendingRemovals_[type];
+        } else {
+          listeners.splice(index, 1);
+
+          if (listeners.length === 0) {
+            delete this.listeners_[type];
+          }
+        }
+      }
+    }
+  };
+
+  return Target;
+}(_Disposable.default);
+
+var _default = Target;
+exports.default = _default;
+},{"../Disposable.js":"node_modules/ol/Disposable.js","./Event.js":"node_modules/ol/events/Event.js","../functions.js":"node_modules/ol/functions.js","../obj.js":"node_modules/ol/obj.js"}],"node_modules/ol/events/EventType.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/events/EventType
+ */
+
+/**
+ * @enum {string}
+ * @const
+ */
+var _default = {
+  /**
+   * Generic change event. Triggered when the revision counter is increased.
+   * @event module:ol/events/Event~BaseEvent#change
+   * @api
+   */
+  CHANGE: 'change',
+
+  /**
+   * Generic error event. Triggered when an error occurs.
+   * @event module:ol/events/Event~BaseEvent#error
+   * @api
+   */
+  ERROR: 'error',
+  BLUR: 'blur',
+  CLEAR: 'clear',
+  CONTEXTMENU: 'contextmenu',
+  CLICK: 'click',
+  DBLCLICK: 'dblclick',
+  DRAGENTER: 'dragenter',
+  DRAGOVER: 'dragover',
+  DROP: 'drop',
+  FOCUS: 'focus',
+  KEYDOWN: 'keydown',
+  KEYPRESS: 'keypress',
+  LOAD: 'load',
+  RESIZE: 'resize',
+  TOUCHMOVE: 'touchmove',
+  WHEEL: 'wheel'
+};
+exports.default = _default;
+},{}],"node_modules/ol/events.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.listen = listen;
+exports.listenOnce = listenOnce;
+exports.unlistenByKey = unlistenByKey;
+
+var _obj = require("./obj.js");
+
+/**
+ * @module ol/events
+ */
+
+/**
+ * Key to use with {@link module:ol/Observable~Observable#unByKey}.
+ * @typedef {Object} EventsKey
+ * @property {ListenerFunction} listener
+ * @property {import("./events/Target.js").EventTargetLike} target
+ * @property {string} type
+ * @api
+ */
+
+/**
+ * Listener function. This function is called with an event object as argument.
+ * When the function returns `false`, event propagation will stop.
+ *
+ * @typedef {function((Event|import("./events/Event.js").default)): (void|boolean)} ListenerFunction
+ * @api
+ */
+
+/**
+ * @typedef {Object} ListenerObject
+ * @property {ListenerFunction} handleEvent
+ */
+
+/**
+ * @typedef {ListenerFunction|ListenerObject} Listener
+ */
+
+/**
+ * Registers an event listener on an event target. Inspired by
+ * https://google.github.io/closure-library/api/source/closure/goog/events/events.js.src.html
+ *
+ * This function efficiently binds a `listener` to a `this` object, and returns
+ * a key for use with {@link module:ol/events~unlistenByKey}.
+ *
+ * @param {import("./events/Target.js").EventTargetLike} target Event target.
+ * @param {string} type Event type.
+ * @param {ListenerFunction} listener Listener.
+ * @param {Object=} opt_this Object referenced by the `this` keyword in the
+ *     listener. Default is the `target`.
+ * @param {boolean=} opt_once If true, add the listener as one-off listener.
+ * @return {EventsKey} Unique key for the listener.
+ */
+function listen(target, type, listener, opt_this, opt_once) {
+  if (opt_this && opt_this !== target) {
+    listener = listener.bind(opt_this);
+  }
+
+  if (opt_once) {
+    var originalListener_1 = listener;
+
+    listener = function () {
+      target.removeEventListener(type, listener);
+      originalListener_1.apply(this, arguments);
+    };
+  }
+
+  var eventsKey = {
+    target: target,
+    type: type,
+    listener: listener
+  };
+  target.addEventListener(type, listener);
+  return eventsKey;
+}
+/**
+ * Registers a one-off event listener on an event target. Inspired by
+ * https://google.github.io/closure-library/api/source/closure/goog/events/events.js.src.html
+ *
+ * This function efficiently binds a `listener` as self-unregistering listener
+ * to a `this` object, and returns a key for use with
+ * {@link module:ol/events~unlistenByKey} in case the listener needs to be
+ * unregistered before it is called.
+ *
+ * When {@link module:ol/events~listen} is called with the same arguments after this
+ * function, the self-unregistering listener will be turned into a permanent
+ * listener.
+ *
+ * @param {import("./events/Target.js").EventTargetLike} target Event target.
+ * @param {string} type Event type.
+ * @param {ListenerFunction} listener Listener.
+ * @param {Object=} opt_this Object referenced by the `this` keyword in the
+ *     listener. Default is the `target`.
+ * @return {EventsKey} Key for unlistenByKey.
+ */
+
+
+function listenOnce(target, type, listener, opt_this) {
+  return listen(target, type, listener, opt_this, true);
+}
+/**
+ * Unregisters event listeners on an event target. Inspired by
+ * https://google.github.io/closure-library/api/source/closure/goog/events/events.js.src.html
+ *
+ * The argument passed to this function is the key returned from
+ * {@link module:ol/events~listen} or {@link module:ol/events~listenOnce}.
+ *
+ * @param {EventsKey} key The key.
+ */
+
+
+function unlistenByKey(key) {
+  if (key && key.target) {
+    key.target.removeEventListener(key.type, key.listener);
+    (0, _obj.clear)(key);
+  }
+}
+},{"./obj.js":"node_modules/ol/obj.js"}],"node_modules/ol/Observable.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.unByKey = unByKey;
+exports.default = void 0;
+
+var _Target = _interopRequireDefault(require("./events/Target.js"));
+
+var _EventType = _interopRequireDefault(require("./events/EventType.js"));
+
+var _events = require("./events.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/Observable
+ */
+
+
+/**
+ * @classdesc
+ * Abstract base class; normally only used for creating subclasses and not
+ * instantiated in apps.
+ * An event target providing convenient methods for listener registration
+ * and unregistration. A generic `change` event is always available through
+ * {@link module:ol/Observable~Observable#changed}.
+ *
+ * @fires import("./events/Event.js").default
+ * @api
+ */
+var Observable =
+/** @class */
+function (_super) {
+  __extends(Observable, _super);
+
+  function Observable() {
+    var _this = _super.call(this) || this;
+    /**
+     * @private
+     * @type {number}
+     */
+
+
+    _this.revision_ = 0;
+    return _this;
+  }
+  /**
+   * Increases the revision counter and dispatches a 'change' event.
+   * @api
+   */
+
+
+  Observable.prototype.changed = function () {
+    ++this.revision_;
+    this.dispatchEvent(_EventType.default.CHANGE);
+  };
+  /**
+   * Get the version number for this object.  Each time the object is modified,
+   * its version number will be incremented.
+   * @return {number} Revision.
+   * @api
+   */
+
+
+  Observable.prototype.getRevision = function () {
+    return this.revision_;
+  };
+  /**
+   * Listen for a certain type of event.
+   * @param {string|Array<string>} type The event type or array of event types.
+   * @param {function(?): ?} listener The listener function.
+   * @return {import("./events.js").EventsKey|Array<import("./events.js").EventsKey>} Unique key for the listener. If
+   *     called with an array of event types as the first argument, the return
+   *     will be an array of keys.
+   * @api
+   */
+
+
+  Observable.prototype.on = function (type, listener) {
+    if (Array.isArray(type)) {
+      var len = type.length;
+      var keys = new Array(len);
+
+      for (var i = 0; i < len; ++i) {
+        keys[i] = (0, _events.listen)(this, type[i], listener);
+      }
+
+      return keys;
+    } else {
+      return (0, _events.listen)(this,
+      /** @type {string} */
+      type, listener);
+    }
+  };
+  /**
+   * Listen once for a certain type of event.
+   * @param {string|Array<string>} type The event type or array of event types.
+   * @param {function(?): ?} listener The listener function.
+   * @return {import("./events.js").EventsKey|Array<import("./events.js").EventsKey>} Unique key for the listener. If
+   *     called with an array of event types as the first argument, the return
+   *     will be an array of keys.
+   * @api
+   */
+
+
+  Observable.prototype.once = function (type, listener) {
+    var key;
+
+    if (Array.isArray(type)) {
+      var len = type.length;
+      key = new Array(len);
+
+      for (var i = 0; i < len; ++i) {
+        key[i] = (0, _events.listenOnce)(this, type[i], listener);
+      }
+    } else {
+      key = (0, _events.listenOnce)(this,
+      /** @type {string} */
+      type, listener);
+    }
+    /** @type {Object} */
+
+
+    listener.ol_key = key;
+    return key;
+  };
+  /**
+   * Unlisten for a certain type of event.
+   * @param {string|Array<string>} type The event type or array of event types.
+   * @param {function(?): ?} listener The listener function.
+   * @api
+   */
+
+
+  Observable.prototype.un = function (type, listener) {
+    var key =
+    /** @type {Object} */
+    listener.ol_key;
+
+    if (key) {
+      unByKey(key);
+    } else if (Array.isArray(type)) {
+      for (var i = 0, ii = type.length; i < ii; ++i) {
+        this.removeEventListener(type[i], listener);
+      }
+    } else {
+      this.removeEventListener(type, listener);
+    }
+  };
+
+  return Observable;
+}(_Target.default);
+/**
+ * Removes an event listener using the key returned by `on()` or `once()`.
+ * @param {import("./events.js").EventsKey|Array<import("./events.js").EventsKey>} key The key returned by `on()`
+ *     or `once()` (or an array of keys).
+ * @api
+ */
+
+
+function unByKey(key) {
+  if (Array.isArray(key)) {
+    for (var i = 0, ii = key.length; i < ii; ++i) {
+      (0, _events.unlistenByKey)(key[i]);
+    }
+  } else {
+    (0, _events.unlistenByKey)(
+    /** @type {import("./events.js").EventsKey} */
+    key);
+  }
+}
+
+var _default = Observable;
+exports.default = _default;
+},{"./events/Target.js":"node_modules/ol/events/Target.js","./events/EventType.js":"node_modules/ol/events/EventType.js","./events.js":"node_modules/ol/events.js"}],"node_modules/ol/Object.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getChangeEventType = getChangeEventType;
+exports.default = exports.ObjectEvent = void 0;
+
+var _Event = _interopRequireDefault(require("./events/Event.js"));
+
+var _ObjectEventType = _interopRequireDefault(require("./ObjectEventType.js"));
+
+var _Observable = _interopRequireDefault(require("./Observable.js"));
+
+var _obj = require("./obj.js");
+
+var _util = require("./util.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/Object
+ */
+
+
+/**
+ * @classdesc
+ * Events emitted by {@link module:ol/Object~BaseObject} instances are instances of this type.
+ */
+var ObjectEvent =
+/** @class */
+function (_super) {
+  __extends(ObjectEvent, _super);
+  /**
+   * @param {string} type The event type.
+   * @param {string} key The property name.
+   * @param {*} oldValue The old value for `key`.
+   */
+
+
+  function ObjectEvent(type, key, oldValue) {
+    var _this = _super.call(this, type) || this;
+    /**
+     * The name of the property whose value is changing.
+     * @type {string}
+     * @api
+     */
+
+
+    _this.key = key;
+    /**
+     * The old value. To get the new value use `e.target.get(e.key)` where
+     * `e` is the event object.
+     * @type {*}
+     * @api
+     */
+
+    _this.oldValue = oldValue;
+    return _this;
+  }
+
+  return ObjectEvent;
+}(_Event.default);
+
+exports.ObjectEvent = ObjectEvent;
+
+/**
+ * @classdesc
+ * Abstract base class; normally only used for creating subclasses and not
+ * instantiated in apps.
+ * Most non-trivial classes inherit from this.
+ *
+ * This extends {@link module:ol/Observable} with observable
+ * properties, where each property is observable as well as the object as a
+ * whole.
+ *
+ * Classes that inherit from this have pre-defined properties, to which you can
+ * add your owns. The pre-defined properties are listed in this documentation as
+ * 'Observable Properties', and have their own accessors; for example,
+ * {@link module:ol/Map~Map} has a `target` property, accessed with
+ * `getTarget()` and changed with `setTarget()`. Not all properties are however
+ * settable. There are also general-purpose accessors `get()` and `set()`. For
+ * example, `get('target')` is equivalent to `getTarget()`.
+ *
+ * The `set` accessors trigger a change event, and you can monitor this by
+ * registering a listener. For example, {@link module:ol/View~View} has a
+ * `center` property, so `view.on('change:center', function(evt) {...});` would
+ * call the function whenever the value of the center property changes. Within
+ * the function, `evt.target` would be the view, so `evt.target.getCenter()`
+ * would return the new center.
+ *
+ * You can add your own observable properties with
+ * `object.set('prop', 'value')`, and retrieve that with `object.get('prop')`.
+ * You can listen for changes on that property value with
+ * `object.on('change:prop', listener)`. You can get a list of all
+ * properties with {@link module:ol/Object~BaseObject#getProperties}.
+ *
+ * Note that the observable properties are separate from standard JS properties.
+ * You can, for example, give your map object a title with
+ * `map.title='New title'` and with `map.set('title', 'Another title')`. The
+ * first will be a `hasOwnProperty`; the second will appear in
+ * `getProperties()`. Only the second is observable.
+ *
+ * Properties can be deleted by using the unset method. E.g.
+ * object.unset('foo').
+ *
+ * @fires ObjectEvent
+ * @api
+ */
+var BaseObject =
+/** @class */
+function (_super) {
+  __extends(BaseObject, _super);
+  /**
+   * @param {Object<string, *>=} opt_values An object with key-value pairs.
+   */
+
+
+  function BaseObject(opt_values) {
+    var _this = _super.call(this) || this; // Call {@link module:ol/util~getUid} to ensure that the order of objects' ids is
+    // the same as the order in which they were created.  This also helps to
+    // ensure that object properties are always added in the same order, which
+    // helps many JavaScript engines generate faster code.
+
+
+    (0, _util.getUid)(_this);
+    /**
+     * @private
+     * @type {Object<string, *>}
+     */
+
+    _this.values_ = null;
+
+    if (opt_values !== undefined) {
+      _this.setProperties(opt_values);
+    }
+
+    return _this;
+  }
+  /**
+   * Gets a value.
+   * @param {string} key Key name.
+   * @return {*} Value.
+   * @api
+   */
+
+
+  BaseObject.prototype.get = function (key) {
+    var value;
+
+    if (this.values_ && this.values_.hasOwnProperty(key)) {
+      value = this.values_[key];
+    }
+
+    return value;
+  };
+  /**
+   * Get a list of object property names.
+   * @return {Array<string>} List of property names.
+   * @api
+   */
+
+
+  BaseObject.prototype.getKeys = function () {
+    return this.values_ && Object.keys(this.values_) || [];
+  };
+  /**
+   * Get an object of all property names and values.
+   * @return {Object<string, *>} Object.
+   * @api
+   */
+
+
+  BaseObject.prototype.getProperties = function () {
+    return this.values_ && (0, _obj.assign)({}, this.values_) || {};
+  };
+  /**
+   * @return {boolean} The object has properties.
+   */
+
+
+  BaseObject.prototype.hasProperties = function () {
+    return !!this.values_;
+  };
+  /**
+   * @param {string} key Key name.
+   * @param {*} oldValue Old value.
+   */
+
+
+  BaseObject.prototype.notify = function (key, oldValue) {
+    var eventType;
+    eventType = getChangeEventType(key);
+    this.dispatchEvent(new ObjectEvent(eventType, key, oldValue));
+    eventType = _ObjectEventType.default.PROPERTYCHANGE;
+    this.dispatchEvent(new ObjectEvent(eventType, key, oldValue));
+  };
+  /**
+   * Sets a value.
+   * @param {string} key Key name.
+   * @param {*} value Value.
+   * @param {boolean=} opt_silent Update without triggering an event.
+   * @api
+   */
+
+
+  BaseObject.prototype.set = function (key, value, opt_silent) {
+    var values = this.values_ || (this.values_ = {});
+
+    if (opt_silent) {
+      values[key] = value;
+    } else {
+      var oldValue = values[key];
+      values[key] = value;
+
+      if (oldValue !== value) {
+        this.notify(key, oldValue);
+      }
+    }
+  };
+  /**
+   * Sets a collection of key-value pairs.  Note that this changes any existing
+   * properties and adds new ones (it does not remove any existing properties).
+   * @param {Object<string, *>} values Values.
+   * @param {boolean=} opt_silent Update without triggering an event.
+   * @api
+   */
+
+
+  BaseObject.prototype.setProperties = function (values, opt_silent) {
+    for (var key in values) {
+      this.set(key, values[key], opt_silent);
+    }
+  };
+  /**
+   * Apply any properties from another object without triggering events.
+   * @param {BaseObject} source The source object.
+   * @protected
+   */
+
+
+  BaseObject.prototype.applyProperties = function (source) {
+    if (!source.values_) {
+      return;
+    }
+
+    (0, _obj.assign)(this.values_ || (this.values_ = {}), source.values_);
+  };
+  /**
+   * Unsets a property.
+   * @param {string} key Key name.
+   * @param {boolean=} opt_silent Unset without triggering an event.
+   * @api
+   */
+
+
+  BaseObject.prototype.unset = function (key, opt_silent) {
+    if (this.values_ && key in this.values_) {
+      var oldValue = this.values_[key];
+      delete this.values_[key];
+
+      if ((0, _obj.isEmpty)(this.values_)) {
+        this.values_ = null;
+      }
+
+      if (!opt_silent) {
+        this.notify(key, oldValue);
+      }
+    }
+  };
+
+  return BaseObject;
+}(_Observable.default);
+/**
+ * @type {Object<string, string>}
+ */
+
+
+var changeEventTypeCache = {};
+/**
+ * @param {string} key Key name.
+ * @return {string} Change name.
+ */
+
+function getChangeEventType(key) {
+  return changeEventTypeCache.hasOwnProperty(key) ? changeEventTypeCache[key] : changeEventTypeCache[key] = 'change:' + key;
+}
+
+var _default = BaseObject;
+exports.default = _default;
+},{"./events/Event.js":"node_modules/ol/events/Event.js","./ObjectEventType.js":"node_modules/ol/ObjectEventType.js","./Observable.js":"node_modules/ol/Observable.js","./obj.js":"node_modules/ol/obj.js","./util.js":"node_modules/ol/util.js"}],"node_modules/ol/CollectionEventType.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/CollectionEventType
+ */
+
+/**
+ * @enum {string}
+ */
+var _default = {
+  /**
+   * Triggered when an item is added to the collection.
+   * @event module:ol/Collection.CollectionEvent#add
+   * @api
+   */
+  ADD: 'add',
+
+  /**
+   * Triggered when an item is removed from the collection.
+   * @event module:ol/Collection.CollectionEvent#remove
+   * @api
+   */
+  REMOVE: 'remove'
+};
+exports.default = _default;
+},{}],"node_modules/ol/Collection.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.CollectionEvent = void 0;
+
+var _AssertionError = _interopRequireDefault(require("./AssertionError.js"));
+
+var _Object = _interopRequireDefault(require("./Object.js"));
+
+var _CollectionEventType = _interopRequireDefault(require("./CollectionEventType.js"));
+
+var _Event = _interopRequireDefault(require("./events/Event.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/Collection
+ */
+
+
+/**
+ * @enum {string}
+ * @private
+ */
+var Property = {
+  LENGTH: 'length'
+};
+/**
+ * @classdesc
+ * Events emitted by {@link module:ol/Collection~Collection} instances are instances of this
+ * type.
+ */
+
+var CollectionEvent =
+/** @class */
+function (_super) {
+  __extends(CollectionEvent, _super);
+  /**
+   * @param {import("./CollectionEventType.js").default} type Type.
+   * @param {*=} opt_element Element.
+   * @param {number=} opt_index The index of the added or removed element.
+   */
+
+
+  function CollectionEvent(type, opt_element, opt_index) {
+    var _this = _super.call(this, type) || this;
+    /**
+     * The element that is added to or removed from the collection.
+     * @type {*}
+     * @api
+     */
+
+
+    _this.element = opt_element;
+    /**
+     * The index of the added or removed element.
+     * @type {number}
+     * @api
+     */
+
+    _this.index = opt_index;
+    return _this;
+  }
+
+  return CollectionEvent;
+}(_Event.default);
+
+exports.CollectionEvent = CollectionEvent;
+
+/**
+ * @typedef {Object} Options
+ * @property {boolean} [unique=false] Disallow the same item from being added to
+ * the collection twice.
+ */
+
+/**
+ * @classdesc
+ * An expanded version of standard JS Array, adding convenience methods for
+ * manipulation. Add and remove changes to the Collection trigger a Collection
+ * event. Note that this does not cover changes to the objects _within_ the
+ * Collection; they trigger events on the appropriate object, not on the
+ * Collection as a whole.
+ *
+ * @fires CollectionEvent
+ *
+ * @template T
+ * @api
+ */
+var Collection =
+/** @class */
+function (_super) {
+  __extends(Collection, _super);
+  /**
+   * @param {Array<T>=} opt_array Array.
+   * @param {Options=} opt_options Collection options.
+   */
+
+
+  function Collection(opt_array, opt_options) {
+    var _this = _super.call(this) || this;
+
+    var options = opt_options || {};
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    _this.unique_ = !!options.unique;
+    /**
+     * @private
+     * @type {!Array<T>}
+     */
+
+    _this.array_ = opt_array ? opt_array : [];
+
+    if (_this.unique_) {
+      for (var i = 0, ii = _this.array_.length; i < ii; ++i) {
+        _this.assertUnique_(_this.array_[i], i);
+      }
+    }
+
+    _this.updateLength_();
+
+    return _this;
+  }
+  /**
+   * Remove all elements from the collection.
+   * @api
+   */
+
+
+  Collection.prototype.clear = function () {
+    while (this.getLength() > 0) {
+      this.pop();
+    }
+  };
+  /**
+   * Add elements to the collection.  This pushes each item in the provided array
+   * to the end of the collection.
+   * @param {!Array<T>} arr Array.
+   * @return {Collection<T>} This collection.
+   * @api
+   */
+
+
+  Collection.prototype.extend = function (arr) {
+    for (var i = 0, ii = arr.length; i < ii; ++i) {
+      this.push(arr[i]);
+    }
+
+    return this;
+  };
+  /**
+   * Iterate over each element, calling the provided callback.
+   * @param {function(T, number, Array<T>): *} f The function to call
+   *     for every element. This function takes 3 arguments (the element, the
+   *     index and the array). The return value is ignored.
+   * @api
+   */
+
+
+  Collection.prototype.forEach = function (f) {
+    var array = this.array_;
+
+    for (var i = 0, ii = array.length; i < ii; ++i) {
+      f(array[i], i, array);
+    }
+  };
+  /**
+   * Get a reference to the underlying Array object. Warning: if the array
+   * is mutated, no events will be dispatched by the collection, and the
+   * collection's "length" property won't be in sync with the actual length
+   * of the array.
+   * @return {!Array<T>} Array.
+   * @api
+   */
+
+
+  Collection.prototype.getArray = function () {
+    return this.array_;
+  };
+  /**
+   * Get the element at the provided index.
+   * @param {number} index Index.
+   * @return {T} Element.
+   * @api
+   */
+
+
+  Collection.prototype.item = function (index) {
+    return this.array_[index];
+  };
+  /**
+   * Get the length of this collection.
+   * @return {number} The length of the array.
+   * @observable
+   * @api
+   */
+
+
+  Collection.prototype.getLength = function () {
+    return this.get(Property.LENGTH);
+  };
+  /**
+   * Insert an element at the provided index.
+   * @param {number} index Index.
+   * @param {T} elem Element.
+   * @api
+   */
+
+
+  Collection.prototype.insertAt = function (index, elem) {
+    if (this.unique_) {
+      this.assertUnique_(elem);
+    }
+
+    this.array_.splice(index, 0, elem);
+    this.updateLength_();
+    this.dispatchEvent(new CollectionEvent(_CollectionEventType.default.ADD, elem, index));
+  };
+  /**
+   * Remove the last element of the collection and return it.
+   * Return `undefined` if the collection is empty.
+   * @return {T|undefined} Element.
+   * @api
+   */
+
+
+  Collection.prototype.pop = function () {
+    return this.removeAt(this.getLength() - 1);
+  };
+  /**
+   * Insert the provided element at the end of the collection.
+   * @param {T} elem Element.
+   * @return {number} New length of the collection.
+   * @api
+   */
+
+
+  Collection.prototype.push = function (elem) {
+    if (this.unique_) {
+      this.assertUnique_(elem);
+    }
+
+    var n = this.getLength();
+    this.insertAt(n, elem);
+    return this.getLength();
+  };
+  /**
+   * Remove the first occurrence of an element from the collection.
+   * @param {T} elem Element.
+   * @return {T|undefined} The removed element or undefined if none found.
+   * @api
+   */
+
+
+  Collection.prototype.remove = function (elem) {
+    var arr = this.array_;
+
+    for (var i = 0, ii = arr.length; i < ii; ++i) {
+      if (arr[i] === elem) {
+        return this.removeAt(i);
+      }
+    }
+
+    return undefined;
+  };
+  /**
+   * Remove the element at the provided index and return it.
+   * Return `undefined` if the collection does not contain this index.
+   * @param {number} index Index.
+   * @return {T|undefined} Value.
+   * @api
+   */
+
+
+  Collection.prototype.removeAt = function (index) {
+    var prev = this.array_[index];
+    this.array_.splice(index, 1);
+    this.updateLength_();
+    this.dispatchEvent(new CollectionEvent(_CollectionEventType.default.REMOVE, prev, index));
+    return prev;
+  };
+  /**
+   * Set the element at the provided index.
+   * @param {number} index Index.
+   * @param {T} elem Element.
+   * @api
+   */
+
+
+  Collection.prototype.setAt = function (index, elem) {
+    var n = this.getLength();
+
+    if (index < n) {
+      if (this.unique_) {
+        this.assertUnique_(elem, index);
+      }
+
+      var prev = this.array_[index];
+      this.array_[index] = elem;
+      this.dispatchEvent(new CollectionEvent(_CollectionEventType.default.REMOVE, prev, index));
+      this.dispatchEvent(new CollectionEvent(_CollectionEventType.default.ADD, elem, index));
+    } else {
+      for (var j = n; j < index; ++j) {
+        this.insertAt(j, undefined);
+      }
+
+      this.insertAt(index, elem);
+    }
+  };
+  /**
+   * @private
+   */
+
+
+  Collection.prototype.updateLength_ = function () {
+    this.set(Property.LENGTH, this.array_.length);
+  };
+  /**
+   * @private
+   * @param {T} elem Element.
+   * @param {number=} opt_except Optional index to ignore.
+   */
+
+
+  Collection.prototype.assertUnique_ = function (elem, opt_except) {
+    for (var i = 0, ii = this.array_.length; i < ii; ++i) {
+      if (this.array_[i] === elem && i !== opt_except) {
+        throw new _AssertionError.default(58);
+      }
+    }
+  };
+
+  return Collection;
+}(_Object.default);
+
+var _default = Collection;
+exports.default = _default;
+},{"./AssertionError.js":"node_modules/ol/AssertionError.js","./Object.js":"node_modules/ol/Object.js","./CollectionEventType.js":"node_modules/ol/CollectionEventType.js","./events/Event.js":"node_modules/ol/events/Event.js"}],"node_modules/ol/asserts.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1549,7 +2304,877 @@ function assert(assertion, errorCode) {
     throw new _AssertionError.default(errorCode);
   }
 }
-},{"./AssertionError.js":"node_modules/ol/AssertionError.js"}],"node_modules/ol/extent.js":[function(require,module,exports) {
+},{"./AssertionError.js":"node_modules/ol/AssertionError.js"}],"node_modules/ol/Feature.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.createStyleFunction = createStyleFunction;
+exports.default = void 0;
+
+var _Object = _interopRequireWildcard(require("./Object.js"));
+
+var _EventType = _interopRequireDefault(require("./events/EventType.js"));
+
+var _asserts = require("./asserts.js");
+
+var _events = require("./events.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/Feature
+ */
+
+
+/**
+ * @typedef {typeof Feature|typeof import("./render/Feature.js").default} FeatureClass
+ */
+
+/**
+ * @typedef {Feature|import("./render/Feature.js").default} FeatureLike
+ */
+
+/**
+ * @classdesc
+ * A vector object for geographic features with a geometry and other
+ * attribute properties, similar to the features in vector file formats like
+ * GeoJSON.
+ *
+ * Features can be styled individually with `setStyle`; otherwise they use the
+ * style of their vector layer.
+ *
+ * Note that attribute properties are set as {@link module:ol/Object} properties on
+ * the feature object, so they are observable, and have get/set accessors.
+ *
+ * Typically, a feature has a single geometry property. You can set the
+ * geometry using the `setGeometry` method and get it with `getGeometry`.
+ * It is possible to store more than one geometry on a feature using attribute
+ * properties. By default, the geometry used for rendering is identified by
+ * the property name `geometry`. If you want to use another geometry property
+ * for rendering, use the `setGeometryName` method to change the attribute
+ * property associated with the geometry for the feature.  For example:
+ *
+ * ```js
+ *
+ * import Feature from 'ol/Feature';
+ * import Polygon from 'ol/geom/Polygon';
+ * import Point from 'ol/geom/Point';
+ *
+ * var feature = new Feature({
+ *   geometry: new Polygon(polyCoords),
+ *   labelPoint: new Point(labelCoords),
+ *   name: 'My Polygon'
+ * });
+ *
+ * // get the polygon geometry
+ * var poly = feature.getGeometry();
+ *
+ * // Render the feature as a point using the coordinates from labelPoint
+ * feature.setGeometryName('labelPoint');
+ *
+ * // get the point geometry
+ * var point = feature.getGeometry();
+ * ```
+ *
+ * @api
+ * @template {import("./geom/Geometry.js").default} Geometry
+ */
+var Feature =
+/** @class */
+function (_super) {
+  __extends(Feature, _super);
+  /**
+   * @param {Geometry|Object<string, *>=} opt_geometryOrProperties
+   *     You may pass a Geometry object directly, or an object literal containing
+   *     properties. If you pass an object literal, you may include a Geometry
+   *     associated with a `geometry` key.
+   */
+
+
+  function Feature(opt_geometryOrProperties) {
+    var _this = _super.call(this) || this;
+    /**
+     * @private
+     * @type {number|string|undefined}
+     */
+
+
+    _this.id_ = undefined;
+    /**
+     * @type {string}
+     * @private
+     */
+
+    _this.geometryName_ = 'geometry';
+    /**
+     * User provided style.
+     * @private
+     * @type {import("./style/Style.js").StyleLike}
+     */
+
+    _this.style_ = null;
+    /**
+     * @private
+     * @type {import("./style/Style.js").StyleFunction|undefined}
+     */
+
+    _this.styleFunction_ = undefined;
+    /**
+     * @private
+     * @type {?import("./events.js").EventsKey}
+     */
+
+    _this.geometryChangeKey_ = null;
+
+    _this.addEventListener((0, _Object.getChangeEventType)(_this.geometryName_), _this.handleGeometryChanged_);
+
+    if (opt_geometryOrProperties) {
+      if (typeof
+      /** @type {?} */
+      opt_geometryOrProperties.getSimplifiedGeometry === 'function') {
+        var geometry =
+        /** @type {Geometry} */
+        opt_geometryOrProperties;
+
+        _this.setGeometry(geometry);
+      } else {
+        /** @type {Object<string, *>} */
+        var properties = opt_geometryOrProperties;
+
+        _this.setProperties(properties);
+      }
+    }
+
+    return _this;
+  }
+  /**
+   * Clone this feature. If the original feature has a geometry it
+   * is also cloned. The feature id is not set in the clone.
+   * @return {Feature} The clone.
+   * @api
+   */
+
+
+  Feature.prototype.clone = function () {
+    var clone = new Feature(this.hasProperties() ? this.getProperties() : null);
+    clone.setGeometryName(this.getGeometryName());
+    var geometry = this.getGeometry();
+
+    if (geometry) {
+      clone.setGeometry(geometry.clone());
+    }
+
+    var style = this.getStyle();
+
+    if (style) {
+      clone.setStyle(style);
+    }
+
+    return clone;
+  };
+  /**
+   * Get the feature's default geometry.  A feature may have any number of named
+   * geometries.  The "default" geometry (the one that is rendered by default) is
+   * set when calling {@link module:ol/Feature~Feature#setGeometry}.
+   * @return {Geometry|undefined} The default geometry for the feature.
+   * @api
+   * @observable
+   */
+
+
+  Feature.prototype.getGeometry = function () {
+    return (
+      /** @type {Geometry|undefined} */
+      this.get(this.geometryName_)
+    );
+  };
+  /**
+   * Get the feature identifier.  This is a stable identifier for the feature and
+   * is either set when reading data from a remote source or set explicitly by
+   * calling {@link module:ol/Feature~Feature#setId}.
+   * @return {number|string|undefined} Id.
+   * @api
+   */
+
+
+  Feature.prototype.getId = function () {
+    return this.id_;
+  };
+  /**
+   * Get the name of the feature's default geometry.  By default, the default
+   * geometry is named `geometry`.
+   * @return {string} Get the property name associated with the default geometry
+   *     for this feature.
+   * @api
+   */
+
+
+  Feature.prototype.getGeometryName = function () {
+    return this.geometryName_;
+  };
+  /**
+   * Get the feature's style. Will return what was provided to the
+   * {@link module:ol/Feature~Feature#setStyle} method.
+   * @return {import("./style/Style.js").StyleLike|undefined} The feature style.
+   * @api
+   */
+
+
+  Feature.prototype.getStyle = function () {
+    return this.style_;
+  };
+  /**
+   * Get the feature's style function.
+   * @return {import("./style/Style.js").StyleFunction|undefined} Return a function
+   * representing the current style of this feature.
+   * @api
+   */
+
+
+  Feature.prototype.getStyleFunction = function () {
+    return this.styleFunction_;
+  };
+  /**
+   * @private
+   */
+
+
+  Feature.prototype.handleGeometryChange_ = function () {
+    this.changed();
+  };
+  /**
+   * @private
+   */
+
+
+  Feature.prototype.handleGeometryChanged_ = function () {
+    if (this.geometryChangeKey_) {
+      (0, _events.unlistenByKey)(this.geometryChangeKey_);
+      this.geometryChangeKey_ = null;
+    }
+
+    var geometry = this.getGeometry();
+
+    if (geometry) {
+      this.geometryChangeKey_ = (0, _events.listen)(geometry, _EventType.default.CHANGE, this.handleGeometryChange_, this);
+    }
+
+    this.changed();
+  };
+  /**
+   * Set the default geometry for the feature.  This will update the property
+   * with the name returned by {@link module:ol/Feature~Feature#getGeometryName}.
+   * @param {Geometry|undefined} geometry The new geometry.
+   * @api
+   * @observable
+   */
+
+
+  Feature.prototype.setGeometry = function (geometry) {
+    this.set(this.geometryName_, geometry);
+  };
+  /**
+   * Set the style for the feature to override the layer style.  This can be a
+   * single style object, an array of styles, or a function that takes a
+   * resolution and returns an array of styles. To unset the feature style, call
+   * `setStyle()` without arguments or a falsey value.
+   * @param {import("./style/Style.js").StyleLike=} opt_style Style for this feature.
+   * @api
+   * @fires module:ol/events/Event~BaseEvent#event:change
+   */
+
+
+  Feature.prototype.setStyle = function (opt_style) {
+    this.style_ = opt_style;
+    this.styleFunction_ = !opt_style ? undefined : createStyleFunction(opt_style);
+    this.changed();
+  };
+  /**
+   * Set the feature id.  The feature id is considered stable and may be used when
+   * requesting features or comparing identifiers returned from a remote source.
+   * The feature id can be used with the
+   * {@link module:ol/source/Vector~VectorSource#getFeatureById} method.
+   * @param {number|string|undefined} id The feature id.
+   * @api
+   * @fires module:ol/events/Event~BaseEvent#event:change
+   */
+
+
+  Feature.prototype.setId = function (id) {
+    this.id_ = id;
+    this.changed();
+  };
+  /**
+   * Set the property name to be used when getting the feature's default geometry.
+   * When calling {@link module:ol/Feature~Feature#getGeometry}, the value of the property with
+   * this name will be returned.
+   * @param {string} name The property name of the default geometry.
+   * @api
+   */
+
+
+  Feature.prototype.setGeometryName = function (name) {
+    this.removeEventListener((0, _Object.getChangeEventType)(this.geometryName_), this.handleGeometryChanged_);
+    this.geometryName_ = name;
+    this.addEventListener((0, _Object.getChangeEventType)(this.geometryName_), this.handleGeometryChanged_);
+    this.handleGeometryChanged_();
+  };
+
+  return Feature;
+}(_Object.default);
+/**
+ * Convert the provided object into a feature style function.  Functions passed
+ * through unchanged.  Arrays of Style or single style objects wrapped
+ * in a new feature style function.
+ * @param {!import("./style/Style.js").StyleFunction|!Array<import("./style/Style.js").default>|!import("./style/Style.js").default} obj
+ *     A feature style function, a single style, or an array of styles.
+ * @return {import("./style/Style.js").StyleFunction} A style function.
+ */
+
+
+function createStyleFunction(obj) {
+  if (typeof obj === 'function') {
+    return obj;
+  } else {
+    /**
+     * @type {Array<import("./style/Style.js").default>}
+     */
+    var styles_1;
+
+    if (Array.isArray(obj)) {
+      styles_1 = obj;
+    } else {
+      (0, _asserts.assert)(typeof
+      /** @type {?} */
+      obj.getZIndex === 'function', 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
+
+      var style =
+      /** @type {import("./style/Style.js").default} */
+      obj;
+      styles_1 = [style];
+    }
+
+    return function () {
+      return styles_1;
+    };
+  }
+}
+
+var _default = Feature;
+exports.default = _default;
+},{"./Object.js":"node_modules/ol/Object.js","./events/EventType.js":"node_modules/ol/events/EventType.js","./asserts.js":"node_modules/ol/asserts.js","./events.js":"node_modules/ol/events.js"}],"node_modules/ol/geom/GeometryLayout.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/geom/GeometryLayout
+ */
+
+/**
+ * The coordinate layout for geometries, indicating whether a 3rd or 4th z ('Z')
+ * or measure ('M') coordinate is available. Supported values are `'XY'`,
+ * `'XYZ'`, `'XYM'`, `'XYZM'`.
+ * @enum {string}
+ */
+var _default = {
+  XY: 'XY',
+  XYZ: 'XYZ',
+  XYM: 'XYM',
+  XYZM: 'XYZM'
+};
+exports.default = _default;
+},{}],"node_modules/ol/geom/GeometryType.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/geom/GeometryType
+ */
+
+/**
+ * The geometry type. One of `'Point'`, `'LineString'`, `'LinearRing'`,
+ * `'Polygon'`, `'MultiPoint'`, `'MultiLineString'`, `'MultiPolygon'`,
+ * `'GeometryCollection'`, `'Circle'`.
+ * @enum {string}
+ */
+var _default = {
+  POINT: 'Point',
+  LINE_STRING: 'LineString',
+  LINEAR_RING: 'LinearRing',
+  POLYGON: 'Polygon',
+  MULTI_POINT: 'MultiPoint',
+  MULTI_LINE_STRING: 'MultiLineString',
+  MULTI_POLYGON: 'MultiPolygon',
+  GEOMETRY_COLLECTION: 'GeometryCollection',
+  CIRCLE: 'Circle'
+};
+exports.default = _default;
+},{}],"node_modules/ol/proj/Units.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.METERS_PER_UNIT = void 0;
+
+/**
+ * @module ol/proj/Units
+ */
+
+/**
+ * Projection units: `'degrees'`, `'ft'`, `'m'`, `'pixels'`, `'tile-pixels'` or
+ * `'us-ft'`.
+ * @enum {string}
+ */
+var Units = {
+  /**
+   * Degrees
+   * @api
+   */
+  DEGREES: 'degrees',
+
+  /**
+   * Feet
+   * @api
+   */
+  FEET: 'ft',
+
+  /**
+   * Meters
+   * @api
+   */
+  METERS: 'm',
+
+  /**
+   * Pixels
+   * @api
+   */
+  PIXELS: 'pixels',
+
+  /**
+   * Tile Pixels
+   * @api
+   */
+  TILE_PIXELS: 'tile-pixels',
+
+  /**
+   * US Feet
+   * @api
+   */
+  USFEET: 'us-ft'
+};
+/**
+ * Meters per unit lookup table.
+ * @const
+ * @type {Object<Units, number>}
+ * @api
+ */
+
+var METERS_PER_UNIT = {}; // use the radius of the Normal sphere
+
+exports.METERS_PER_UNIT = METERS_PER_UNIT;
+METERS_PER_UNIT[Units.DEGREES] = 2 * Math.PI * 6370997 / 360;
+METERS_PER_UNIT[Units.FEET] = 0.3048;
+METERS_PER_UNIT[Units.METERS] = 1;
+METERS_PER_UNIT[Units.USFEET] = 1200 / 3937;
+var _default = Units;
+exports.default = _default;
+},{}],"node_modules/ol/transform.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.create = create;
+exports.reset = reset;
+exports.multiply = multiply;
+exports.set = set;
+exports.setFromArray = setFromArray;
+exports.apply = apply;
+exports.rotate = rotate;
+exports.scale = scale;
+exports.makeScale = makeScale;
+exports.translate = translate;
+exports.compose = compose;
+exports.composeCssTransform = composeCssTransform;
+exports.invert = invert;
+exports.makeInverse = makeInverse;
+exports.determinant = determinant;
+exports.toString = toString;
+
+var _asserts = require("./asserts.js");
+
+/**
+ * @module ol/transform
+ */
+
+/**
+ * An array representing an affine 2d transformation for use with
+ * {@link module:ol/transform} functions. The array has 6 elements.
+ * @typedef {!Array<number>} Transform
+ * @api
+ */
+
+/**
+ * Collection of affine 2d transformation functions. The functions work on an
+ * array of 6 elements. The element order is compatible with the [SVGMatrix
+ * interface](https://developer.mozilla.org/en-US/docs/Web/API/SVGMatrix) and is
+ * a subset (elements a to f) of a 3×3 matrix:
+ * ```
+ * [ a c e ]
+ * [ b d f ]
+ * [ 0 0 1 ]
+ * ```
+ */
+
+/**
+ * @private
+ * @type {Transform}
+ */
+var tmp_ = new Array(6);
+/**
+ * Create an identity transform.
+ * @return {!Transform} Identity transform.
+ */
+
+function create() {
+  return [1, 0, 0, 1, 0, 0];
+}
+/**
+ * Resets the given transform to an identity transform.
+ * @param {!Transform} transform Transform.
+ * @return {!Transform} Transform.
+ */
+
+
+function reset(transform) {
+  return set(transform, 1, 0, 0, 1, 0, 0);
+}
+/**
+ * Multiply the underlying matrices of two transforms and return the result in
+ * the first transform.
+ * @param {!Transform} transform1 Transform parameters of matrix 1.
+ * @param {!Transform} transform2 Transform parameters of matrix 2.
+ * @return {!Transform} transform1 multiplied with transform2.
+ */
+
+
+function multiply(transform1, transform2) {
+  var a1 = transform1[0];
+  var b1 = transform1[1];
+  var c1 = transform1[2];
+  var d1 = transform1[3];
+  var e1 = transform1[4];
+  var f1 = transform1[5];
+  var a2 = transform2[0];
+  var b2 = transform2[1];
+  var c2 = transform2[2];
+  var d2 = transform2[3];
+  var e2 = transform2[4];
+  var f2 = transform2[5];
+  transform1[0] = a1 * a2 + c1 * b2;
+  transform1[1] = b1 * a2 + d1 * b2;
+  transform1[2] = a1 * c2 + c1 * d2;
+  transform1[3] = b1 * c2 + d1 * d2;
+  transform1[4] = a1 * e2 + c1 * f2 + e1;
+  transform1[5] = b1 * e2 + d1 * f2 + f1;
+  return transform1;
+}
+/**
+ * Set the transform components a-f on a given transform.
+ * @param {!Transform} transform Transform.
+ * @param {number} a The a component of the transform.
+ * @param {number} b The b component of the transform.
+ * @param {number} c The c component of the transform.
+ * @param {number} d The d component of the transform.
+ * @param {number} e The e component of the transform.
+ * @param {number} f The f component of the transform.
+ * @return {!Transform} Matrix with transform applied.
+ */
+
+
+function set(transform, a, b, c, d, e, f) {
+  transform[0] = a;
+  transform[1] = b;
+  transform[2] = c;
+  transform[3] = d;
+  transform[4] = e;
+  transform[5] = f;
+  return transform;
+}
+/**
+ * Set transform on one matrix from another matrix.
+ * @param {!Transform} transform1 Matrix to set transform to.
+ * @param {!Transform} transform2 Matrix to set transform from.
+ * @return {!Transform} transform1 with transform from transform2 applied.
+ */
+
+
+function setFromArray(transform1, transform2) {
+  transform1[0] = transform2[0];
+  transform1[1] = transform2[1];
+  transform1[2] = transform2[2];
+  transform1[3] = transform2[3];
+  transform1[4] = transform2[4];
+  transform1[5] = transform2[5];
+  return transform1;
+}
+/**
+ * Transforms the given coordinate with the given transform returning the
+ * resulting, transformed coordinate. The coordinate will be modified in-place.
+ *
+ * @param {Transform} transform The transformation.
+ * @param {import("./coordinate.js").Coordinate|import("./pixel.js").Pixel} coordinate The coordinate to transform.
+ * @return {import("./coordinate.js").Coordinate|import("./pixel.js").Pixel} return coordinate so that operations can be
+ *     chained together.
+ */
+
+
+function apply(transform, coordinate) {
+  var x = coordinate[0];
+  var y = coordinate[1];
+  coordinate[0] = transform[0] * x + transform[2] * y + transform[4];
+  coordinate[1] = transform[1] * x + transform[3] * y + transform[5];
+  return coordinate;
+}
+/**
+ * Applies rotation to the given transform.
+ * @param {!Transform} transform Transform.
+ * @param {number} angle Angle in radians.
+ * @return {!Transform} The rotated transform.
+ */
+
+
+function rotate(transform, angle) {
+  var cos = Math.cos(angle);
+  var sin = Math.sin(angle);
+  return multiply(transform, set(tmp_, cos, sin, -sin, cos, 0, 0));
+}
+/**
+ * Applies scale to a given transform.
+ * @param {!Transform} transform Transform.
+ * @param {number} x Scale factor x.
+ * @param {number} y Scale factor y.
+ * @return {!Transform} The scaled transform.
+ */
+
+
+function scale(transform, x, y) {
+  return multiply(transform, set(tmp_, x, 0, 0, y, 0, 0));
+}
+/**
+ * Creates a scale transform.
+ * @param {!Transform} target Transform to overwrite.
+ * @param {number} x Scale factor x.
+ * @param {number} y Scale factor y.
+ * @return {!Transform} The scale transform.
+ */
+
+
+function makeScale(target, x, y) {
+  return set(target, x, 0, 0, y, 0, 0);
+}
+/**
+ * Applies translation to the given transform.
+ * @param {!Transform} transform Transform.
+ * @param {number} dx Translation x.
+ * @param {number} dy Translation y.
+ * @return {!Transform} The translated transform.
+ */
+
+
+function translate(transform, dx, dy) {
+  return multiply(transform, set(tmp_, 1, 0, 0, 1, dx, dy));
+}
+/**
+ * Creates a composite transform given an initial translation, scale, rotation, and
+ * final translation (in that order only, not commutative).
+ * @param {!Transform} transform The transform (will be modified in place).
+ * @param {number} dx1 Initial translation x.
+ * @param {number} dy1 Initial translation y.
+ * @param {number} sx Scale factor x.
+ * @param {number} sy Scale factor y.
+ * @param {number} angle Rotation (in counter-clockwise radians).
+ * @param {number} dx2 Final translation x.
+ * @param {number} dy2 Final translation y.
+ * @return {!Transform} The composite transform.
+ */
+
+
+function compose(transform, dx1, dy1, sx, sy, angle, dx2, dy2) {
+  var sin = Math.sin(angle);
+  var cos = Math.cos(angle);
+  transform[0] = sx * cos;
+  transform[1] = sy * sin;
+  transform[2] = -sx * sin;
+  transform[3] = sy * cos;
+  transform[4] = dx2 * sx * cos - dy2 * sx * sin + dx1;
+  transform[5] = dx2 * sy * sin + dy2 * sy * cos + dy1;
+  return transform;
+}
+/**
+ * Creates a composite transform given an initial translation, scale, rotation, and
+ * final translation (in that order only, not commutative). The resulting transform
+ * string can be applied as `transform` porperty of an HTMLElement's style.
+ * @param {number} dx1 Initial translation x.
+ * @param {number} dy1 Initial translation y.
+ * @param {number} sx Scale factor x.
+ * @param {number} sy Scale factor y.
+ * @param {number} angle Rotation (in counter-clockwise radians).
+ * @param {number} dx2 Final translation x.
+ * @param {number} dy2 Final translation y.
+ * @return {string} The composite css transform.
+ * @api
+ */
+
+
+function composeCssTransform(dx1, dy1, sx, sy, angle, dx2, dy2) {
+  return toString(compose(create(), dx1, dy1, sx, sy, angle, dx2, dy2));
+}
+/**
+ * Invert the given transform.
+ * @param {!Transform} source The source transform to invert.
+ * @return {!Transform} The inverted (source) transform.
+ */
+
+
+function invert(source) {
+  return makeInverse(source, source);
+}
+/**
+ * Invert the given transform.
+ * @param {!Transform} target Transform to be set as the inverse of
+ *     the source transform.
+ * @param {!Transform} source The source transform to invert.
+ * @return {!Transform} The inverted (target) transform.
+ */
+
+
+function makeInverse(target, source) {
+  var det = determinant(source);
+  (0, _asserts.assert)(det !== 0, 32); // Transformation matrix cannot be inverted
+
+  var a = source[0];
+  var b = source[1];
+  var c = source[2];
+  var d = source[3];
+  var e = source[4];
+  var f = source[5];
+  target[0] = d / det;
+  target[1] = -b / det;
+  target[2] = -c / det;
+  target[3] = a / det;
+  target[4] = (c * f - d * e) / det;
+  target[5] = -(a * f - b * e) / det;
+  return target;
+}
+/**
+ * Returns the determinant of the given matrix.
+ * @param {!Transform} mat Matrix.
+ * @return {number} Determinant.
+ */
+
+
+function determinant(mat) {
+  return mat[0] * mat[3] - mat[1] * mat[2];
+}
+/**
+ * A string version of the transform.  This can be used
+ * for CSS transforms.
+ * @param {!Transform} mat Matrix.
+ * @return {string} The transform as a string.
+ */
+
+
+function toString(mat) {
+  return 'matrix(' + mat.join(', ') + ')';
+}
+},{"./asserts.js":"node_modules/ol/asserts.js"}],"node_modules/ol/extent/Corner.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/extent/Corner
+ */
+
+/**
+ * Extent corner.
+ * @enum {string}
+ */
+var _default = {
+  BOTTOM_LEFT: 'bottom-left',
+  BOTTOM_RIGHT: 'bottom-right',
+  TOP_LEFT: 'top-left',
+  TOP_RIGHT: 'top-right'
+};
+exports.default = _default;
+},{}],"node_modules/ol/extent/Relationship.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * @module ol/extent/Relationship
+ */
+
+/**
+ * Relationship to an extent.
+ * @enum {number}
+ */
+var _default = {
+  UNKNOWN: 0,
+  INTERSECTING: 1,
+  ABOVE: 2,
+  RIGHT: 4,
+  BELOW: 8,
+  LEFT: 16
+};
+exports.default = _default;
+},{}],"node_modules/ol/extent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2476,7 +4101,8 @@ function wrapX(extent, projection) {
 
   return extent;
 }
-},{"./extent/Corner.js":"node_modules/ol/extent/Corner.js","./extent/Relationship.js":"node_modules/ol/extent/Relationship.js","./asserts.js":"node_modules/ol/asserts.js"}],"node_modules/ol/geom/GeometryType.js":[function(require,module,exports) {
+},{"./extent/Corner.js":"node_modules/ol/extent/Corner.js","./extent/Relationship.js":"node_modules/ol/extent/Relationship.js","./asserts.js":"node_modules/ol/asserts.js"}],"node_modules/ol/proj/Projection.js":[function(require,module,exports) {
+var global = arguments[3];
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2484,29 +4110,985 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+var _Units = require("./Units.js");
+
 /**
- * @module ol/geom/GeometryType
+ * @module ol/proj/Projection
  */
 
 /**
- * The geometry type. One of `'Point'`, `'LineString'`, `'LinearRing'`,
- * `'Polygon'`, `'MultiPoint'`, `'MultiLineString'`, `'MultiPolygon'`,
- * `'GeometryCollection'`, `'Circle'`.
- * @enum {string}
+ * @typedef {Object} Options
+ * @property {string} code The SRS identifier code, e.g. `EPSG:4326`.
+ * @property {import("./Units.js").default|string} [units] Units. Required unless a
+ * proj4 projection is defined for `code`.
+ * @property {import("../extent.js").Extent} [extent] The validity extent for the SRS.
+ * @property {string} [axisOrientation='enu'] The axis orientation as specified in Proj4.
+ * @property {boolean} [global=false] Whether the projection is valid for the whole globe.
+ * @property {number} [metersPerUnit] The meters per unit for the SRS.
+ * If not provided, the `units` are used to get the meters per unit from the {@link module:ol/proj/Units~METERS_PER_UNIT}
+ * lookup table.
+ * @property {import("../extent.js").Extent} [worldExtent] The world extent for the SRS.
+ * @property {function(number, import("../coordinate.js").Coordinate):number} [getPointResolution]
+ * Function to determine resolution at a point. The function is called with a
+ * `{number}` view resolution and an `{import("../coordinate.js").Coordinate}` as arguments, and returns
+ * the `{number}` resolution in projection units at the passed coordinate. If this is `undefined`,
+ * the default {@link module:ol/proj#getPointResolution} function will be used.
  */
-var _default = {
-  POINT: 'Point',
-  LINE_STRING: 'LineString',
-  LINEAR_RING: 'LinearRing',
-  POLYGON: 'Polygon',
-  MULTI_POINT: 'MultiPoint',
-  MULTI_LINE_STRING: 'MultiLineString',
-  MULTI_POLYGON: 'MultiPolygon',
-  GEOMETRY_COLLECTION: 'GeometryCollection',
-  CIRCLE: 'Circle'
-};
+
+/**
+ * @classdesc
+ * Projection definition class. One of these is created for each projection
+ * supported in the application and stored in the {@link module:ol/proj} namespace.
+ * You can use these in applications, but this is not required, as API params
+ * and options use {@link module:ol/proj~ProjectionLike} which means the simple string
+ * code will suffice.
+ *
+ * You can use {@link module:ol/proj~get} to retrieve the object for a particular
+ * projection.
+ *
+ * The library includes definitions for `EPSG:4326` and `EPSG:3857`, together
+ * with the following aliases:
+ * * `EPSG:4326`: CRS:84, urn:ogc:def:crs:EPSG:6.6:4326,
+ *     urn:ogc:def:crs:OGC:1.3:CRS84, urn:ogc:def:crs:OGC:2:84,
+ *     http://www.opengis.net/gml/srs/epsg.xml#4326,
+ *     urn:x-ogc:def:crs:EPSG:4326
+ * * `EPSG:3857`: EPSG:102100, EPSG:102113, EPSG:900913,
+ *     urn:ogc:def:crs:EPSG:6.18:3:3857,
+ *     http://www.opengis.net/gml/srs/epsg.xml#3857
+ *
+ * If you use [proj4js](https://github.com/proj4js/proj4js), aliases can
+ * be added using `proj4.defs()`. After all required projection definitions are
+ * added, call the {@link module:ol/proj/proj4~register} function.
+ *
+ * @api
+ */
+var Projection =
+/** @class */
+function () {
+  /**
+   * @param {Options} options Projection options.
+   */
+  function Projection(options) {
+    /**
+     * @private
+     * @type {string}
+     */
+    this.code_ = options.code;
+    /**
+     * Units of projected coordinates. When set to `TILE_PIXELS`, a
+     * `this.extent_` and `this.worldExtent_` must be configured properly for each
+     * tile.
+     * @private
+     * @type {import("./Units.js").default}
+     */
+
+    this.units_ =
+    /** @type {import("./Units.js").default} */
+    options.units;
+    /**
+     * Validity extent of the projection in projected coordinates. For projections
+     * with `TILE_PIXELS` units, this is the extent of the tile in
+     * tile pixel space.
+     * @private
+     * @type {import("../extent.js").Extent}
+     */
+
+    this.extent_ = options.extent !== undefined ? options.extent : null;
+    /**
+     * Extent of the world in EPSG:4326. For projections with
+     * `TILE_PIXELS` units, this is the extent of the tile in
+     * projected coordinate space.
+     * @private
+     * @type {import("../extent.js").Extent}
+     */
+
+    this.worldExtent_ = options.worldExtent !== undefined ? options.worldExtent : null;
+    /**
+     * @private
+     * @type {string}
+     */
+
+    this.axisOrientation_ = options.axisOrientation !== undefined ? options.axisOrientation : 'enu';
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    this.global_ = options.global !== undefined ? options.global : false;
+    /**
+     * @private
+     * @type {boolean}
+     */
+
+    this.canWrapX_ = !!(this.global_ && this.extent_);
+    /**
+     * @private
+     * @type {function(number, import("../coordinate.js").Coordinate):number|undefined}
+     */
+
+    this.getPointResolutionFunc_ = options.getPointResolution;
+    /**
+     * @private
+     * @type {import("../tilegrid/TileGrid.js").default}
+     */
+
+    this.defaultTileGrid_ = null;
+    /**
+     * @private
+     * @type {number|undefined}
+     */
+
+    this.metersPerUnit_ = options.metersPerUnit;
+  }
+  /**
+   * @return {boolean} The projection is suitable for wrapping the x-axis
+   */
+
+
+  Projection.prototype.canWrapX = function () {
+    return this.canWrapX_;
+  };
+  /**
+   * Get the code for this projection, e.g. 'EPSG:4326'.
+   * @return {string} Code.
+   * @api
+   */
+
+
+  Projection.prototype.getCode = function () {
+    return this.code_;
+  };
+  /**
+   * Get the validity extent for this projection.
+   * @return {import("../extent.js").Extent} Extent.
+   * @api
+   */
+
+
+  Projection.prototype.getExtent = function () {
+    return this.extent_;
+  };
+  /**
+   * Get the units of this projection.
+   * @return {import("./Units.js").default} Units.
+   * @api
+   */
+
+
+  Projection.prototype.getUnits = function () {
+    return this.units_;
+  };
+  /**
+   * Get the amount of meters per unit of this projection.  If the projection is
+   * not configured with `metersPerUnit` or a units identifier, the return is
+   * `undefined`.
+   * @return {number|undefined} Meters.
+   * @api
+   */
+
+
+  Projection.prototype.getMetersPerUnit = function () {
+    return this.metersPerUnit_ || _Units.METERS_PER_UNIT[this.units_];
+  };
+  /**
+   * Get the world extent for this projection.
+   * @return {import("../extent.js").Extent} Extent.
+   * @api
+   */
+
+
+  Projection.prototype.getWorldExtent = function () {
+    return this.worldExtent_;
+  };
+  /**
+   * Get the axis orientation of this projection.
+   * Example values are:
+   * enu - the default easting, northing, elevation.
+   * neu - northing, easting, up - useful for "lat/long" geographic coordinates,
+   *     or south orientated transverse mercator.
+   * wnu - westing, northing, up - some planetary coordinate systems have
+   *     "west positive" coordinate systems
+   * @return {string} Axis orientation.
+   * @api
+   */
+
+
+  Projection.prototype.getAxisOrientation = function () {
+    return this.axisOrientation_;
+  };
+  /**
+   * Is this projection a global projection which spans the whole world?
+   * @return {boolean} Whether the projection is global.
+   * @api
+   */
+
+
+  Projection.prototype.isGlobal = function () {
+    return this.global_;
+  };
+  /**
+   * Set if the projection is a global projection which spans the whole world
+   * @param {boolean} global Whether the projection is global.
+   * @api
+   */
+
+
+  Projection.prototype.setGlobal = function (global) {
+    this.global_ = global;
+    this.canWrapX_ = !!(global && this.extent_);
+  };
+  /**
+   * @return {import("../tilegrid/TileGrid.js").default} The default tile grid.
+   */
+
+
+  Projection.prototype.getDefaultTileGrid = function () {
+    return this.defaultTileGrid_;
+  };
+  /**
+   * @param {import("../tilegrid/TileGrid.js").default} tileGrid The default tile grid.
+   */
+
+
+  Projection.prototype.setDefaultTileGrid = function (tileGrid) {
+    this.defaultTileGrid_ = tileGrid;
+  };
+  /**
+   * Set the validity extent for this projection.
+   * @param {import("../extent.js").Extent} extent Extent.
+   * @api
+   */
+
+
+  Projection.prototype.setExtent = function (extent) {
+    this.extent_ = extent;
+    this.canWrapX_ = !!(this.global_ && extent);
+  };
+  /**
+   * Set the world extent for this projection.
+   * @param {import("../extent.js").Extent} worldExtent World extent
+   *     [minlon, minlat, maxlon, maxlat].
+   * @api
+   */
+
+
+  Projection.prototype.setWorldExtent = function (worldExtent) {
+    this.worldExtent_ = worldExtent;
+  };
+  /**
+   * Set the getPointResolution function (see {@link module:ol/proj~getPointResolution}
+   * for this projection.
+   * @param {function(number, import("../coordinate.js").Coordinate):number} func Function
+   * @api
+   */
+
+
+  Projection.prototype.setGetPointResolution = function (func) {
+    this.getPointResolutionFunc_ = func;
+  };
+  /**
+   * Get the custom point resolution function for this projection (if set).
+   * @return {function(number, import("../coordinate.js").Coordinate):number|undefined} The custom point
+   * resolution function (if set).
+   */
+
+
+  Projection.prototype.getPointResolutionFunc = function () {
+    return this.getPointResolutionFunc_;
+  };
+
+  return Projection;
+}();
+
+var _default = Projection;
 exports.default = _default;
-},{}],"node_modules/ol/sphere.js":[function(require,module,exports) {
+},{"./Units.js":"node_modules/ol/proj/Units.js"}],"node_modules/ol/math.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.clamp = clamp;
+exports.squaredSegmentDistance = squaredSegmentDistance;
+exports.squaredDistance = squaredDistance;
+exports.solveLinearSystem = solveLinearSystem;
+exports.toDegrees = toDegrees;
+exports.toRadians = toRadians;
+exports.modulo = modulo;
+exports.lerp = lerp;
+exports.log2 = exports.cosh = void 0;
+
+/**
+ * @module ol/math
+ */
+
+/**
+ * Takes a number and clamps it to within the provided bounds.
+ * @param {number} value The input number.
+ * @param {number} min The minimum value to return.
+ * @param {number} max The maximum value to return.
+ * @return {number} The input number if it is within bounds, or the nearest
+ *     number within the bounds.
+ */
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+/**
+ * Return the hyperbolic cosine of a given number. The method will use the
+ * native `Math.cosh` function if it is available, otherwise the hyperbolic
+ * cosine will be calculated via the reference implementation of the Mozilla
+ * developer network.
+ *
+ * @param {number} x X.
+ * @return {number} Hyperbolic cosine of x.
+ */
+
+
+var cosh = function () {
+  // Wrapped in a iife, to save the overhead of checking for the native
+  // implementation on every invocation.
+  var cosh;
+
+  if ('cosh' in Math) {
+    // The environment supports the native Math.cosh function, use it…
+    cosh = Math.cosh;
+  } else {
+    // … else, use the reference implementation of MDN:
+    cosh = function (x) {
+      var y =
+      /** @type {Math} */
+      Math.exp(x);
+      return (y + 1 / y) / 2;
+    };
+  }
+
+  return cosh;
+}();
+/**
+ * Return the base 2 logarithm of a given number. The method will use the
+ * native `Math.log2` function if it is available, otherwise the base 2
+ * logarithm will be calculated via the reference implementation of the
+ * Mozilla developer network.
+ *
+ * @param {number} x X.
+ * @return {number} Base 2 logarithm of x.
+ */
+
+
+exports.cosh = cosh;
+
+var log2 = function () {
+  // Wrapped in a iife, to save the overhead of checking for the native
+  // implementation on every invocation.
+  var log2;
+
+  if ('log2' in Math) {
+    // The environment supports the native Math.log2 function, use it…
+    log2 = Math.log2;
+  } else {
+    // … else, use the reference implementation of MDN:
+    log2 = function (x) {
+      return Math.log(x) * Math.LOG2E;
+    };
+  }
+
+  return log2;
+}();
+/**
+ * Returns the square of the closest distance between the point (x, y) and the
+ * line segment (x1, y1) to (x2, y2).
+ * @param {number} x X.
+ * @param {number} y Y.
+ * @param {number} x1 X1.
+ * @param {number} y1 Y1.
+ * @param {number} x2 X2.
+ * @param {number} y2 Y2.
+ * @return {number} Squared distance.
+ */
+
+
+exports.log2 = log2;
+
+function squaredSegmentDistance(x, y, x1, y1, x2, y2) {
+  var dx = x2 - x1;
+  var dy = y2 - y1;
+
+  if (dx !== 0 || dy !== 0) {
+    var t = ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy);
+
+    if (t > 1) {
+      x1 = x2;
+      y1 = y2;
+    } else if (t > 0) {
+      x1 += dx * t;
+      y1 += dy * t;
+    }
+  }
+
+  return squaredDistance(x, y, x1, y1);
+}
+/**
+ * Returns the square of the distance between the points (x1, y1) and (x2, y2).
+ * @param {number} x1 X1.
+ * @param {number} y1 Y1.
+ * @param {number} x2 X2.
+ * @param {number} y2 Y2.
+ * @return {number} Squared distance.
+ */
+
+
+function squaredDistance(x1, y1, x2, y2) {
+  var dx = x2 - x1;
+  var dy = y2 - y1;
+  return dx * dx + dy * dy;
+}
+/**
+ * Solves system of linear equations using Gaussian elimination method.
+ *
+ * @param {Array<Array<number>>} mat Augmented matrix (n x n + 1 column)
+ *                                     in row-major order.
+ * @return {Array<number>} The resulting vector.
+ */
+
+
+function solveLinearSystem(mat) {
+  var n = mat.length;
+
+  for (var i = 0; i < n; i++) {
+    // Find max in the i-th column (ignoring i - 1 first rows)
+    var maxRow = i;
+    var maxEl = Math.abs(mat[i][i]);
+
+    for (var r = i + 1; r < n; r++) {
+      var absValue = Math.abs(mat[r][i]);
+
+      if (absValue > maxEl) {
+        maxEl = absValue;
+        maxRow = r;
+      }
+    }
+
+    if (maxEl === 0) {
+      return null; // matrix is singular
+    } // Swap max row with i-th (current) row
+
+
+    var tmp = mat[maxRow];
+    mat[maxRow] = mat[i];
+    mat[i] = tmp; // Subtract the i-th row to make all the remaining rows 0 in the i-th column
+
+    for (var j = i + 1; j < n; j++) {
+      var coef = -mat[j][i] / mat[i][i];
+
+      for (var k = i; k < n + 1; k++) {
+        if (i == k) {
+          mat[j][k] = 0;
+        } else {
+          mat[j][k] += coef * mat[i][k];
+        }
+      }
+    }
+  } // Solve Ax=b for upper triangular matrix A (mat)
+
+
+  var x = new Array(n);
+
+  for (var l = n - 1; l >= 0; l--) {
+    x[l] = mat[l][n] / mat[l][l];
+
+    for (var m = l - 1; m >= 0; m--) {
+      mat[m][n] -= mat[m][l] * x[l];
+    }
+  }
+
+  return x;
+}
+/**
+ * Converts radians to to degrees.
+ *
+ * @param {number} angleInRadians Angle in radians.
+ * @return {number} Angle in degrees.
+ */
+
+
+function toDegrees(angleInRadians) {
+  return angleInRadians * 180 / Math.PI;
+}
+/**
+ * Converts degrees to radians.
+ *
+ * @param {number} angleInDegrees Angle in degrees.
+ * @return {number} Angle in radians.
+ */
+
+
+function toRadians(angleInDegrees) {
+  return angleInDegrees * Math.PI / 180;
+}
+/**
+ * Returns the modulo of a / b, depending on the sign of b.
+ *
+ * @param {number} a Dividend.
+ * @param {number} b Divisor.
+ * @return {number} Modulo.
+ */
+
+
+function modulo(a, b) {
+  var r = a % b;
+  return r * b < 0 ? r + b : r;
+}
+/**
+ * Calculates the linearly interpolated value of x between a and b.
+ *
+ * @param {number} a Number
+ * @param {number} b Number
+ * @param {number} x Value to be interpolated.
+ * @return {number} Interpolated value.
+ */
+
+
+function lerp(a, b, x) {
+  return a + x * (b - a);
+}
+},{}],"node_modules/ol/proj/epsg3857.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.fromEPSG4326 = fromEPSG4326;
+exports.toEPSG4326 = toEPSG4326;
+exports.PROJECTIONS = exports.MAX_SAFE_Y = exports.WORLD_EXTENT = exports.EXTENT = exports.HALF_SIZE = exports.RADIUS = void 0;
+
+var _Projection = _interopRequireDefault(require("./Projection.js"));
+
+var _Units = _interopRequireDefault(require("./Units.js"));
+
+var _math = require("../math.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/proj/epsg3857
+ */
+
+
+/**
+ * Radius of WGS84 sphere
+ *
+ * @const
+ * @type {number}
+ */
+var RADIUS = 6378137;
+/**
+ * @const
+ * @type {number}
+ */
+
+exports.RADIUS = RADIUS;
+var HALF_SIZE = Math.PI * RADIUS;
+/**
+ * @const
+ * @type {import("../extent.js").Extent}
+ */
+
+exports.HALF_SIZE = HALF_SIZE;
+var EXTENT = [-HALF_SIZE, -HALF_SIZE, HALF_SIZE, HALF_SIZE];
+/**
+ * @const
+ * @type {import("../extent.js").Extent}
+ */
+
+exports.EXTENT = EXTENT;
+var WORLD_EXTENT = [-180, -85, 180, 85];
+/**
+ * Maximum safe value in y direction
+ * @const
+ * @type {number}
+ */
+
+exports.WORLD_EXTENT = WORLD_EXTENT;
+var MAX_SAFE_Y = RADIUS * Math.log(Math.tan(Math.PI / 2));
+/**
+ * @classdesc
+ * Projection object for web/spherical Mercator (EPSG:3857).
+ */
+
+exports.MAX_SAFE_Y = MAX_SAFE_Y;
+
+var EPSG3857Projection =
+/** @class */
+function (_super) {
+  __extends(EPSG3857Projection, _super);
+  /**
+   * @param {string} code Code.
+   */
+
+
+  function EPSG3857Projection(code) {
+    return _super.call(this, {
+      code: code,
+      units: _Units.default.METERS,
+      extent: EXTENT,
+      global: true,
+      worldExtent: WORLD_EXTENT,
+      getPointResolution: function (resolution, point) {
+        return resolution / (0, _math.cosh)(point[1] / RADIUS);
+      }
+    }) || this;
+  }
+
+  return EPSG3857Projection;
+}(_Projection.default);
+/**
+ * Projections equal to EPSG:3857.
+ *
+ * @const
+ * @type {Array<import("./Projection.js").default>}
+ */
+
+
+var PROJECTIONS = [new EPSG3857Projection('EPSG:3857'), new EPSG3857Projection('EPSG:102100'), new EPSG3857Projection('EPSG:102113'), new EPSG3857Projection('EPSG:900913'), new EPSG3857Projection('http://www.opengis.net/gml/srs/epsg.xml#3857')];
+/**
+ * Transformation from EPSG:4326 to EPSG:3857.
+ *
+ * @param {Array<number>} input Input array of coordinate values.
+ * @param {Array<number>=} opt_output Output array of coordinate values.
+ * @param {number=} opt_dimension Dimension (default is `2`).
+ * @return {Array<number>} Output array of coordinate values.
+ */
+
+exports.PROJECTIONS = PROJECTIONS;
+
+function fromEPSG4326(input, opt_output, opt_dimension) {
+  var length = input.length;
+  var dimension = opt_dimension > 1 ? opt_dimension : 2;
+  var output = opt_output;
+
+  if (output === undefined) {
+    if (dimension > 2) {
+      // preserve values beyond second dimension
+      output = input.slice();
+    } else {
+      output = new Array(length);
+    }
+  }
+
+  for (var i = 0; i < length; i += dimension) {
+    output[i] = HALF_SIZE * input[i] / 180;
+    var y = RADIUS * Math.log(Math.tan(Math.PI * (+input[i + 1] + 90) / 360));
+
+    if (y > MAX_SAFE_Y) {
+      y = MAX_SAFE_Y;
+    } else if (y < -MAX_SAFE_Y) {
+      y = -MAX_SAFE_Y;
+    }
+
+    output[i + 1] = y;
+  }
+
+  return output;
+}
+/**
+ * Transformation from EPSG:3857 to EPSG:4326.
+ *
+ * @param {Array<number>} input Input array of coordinate values.
+ * @param {Array<number>=} opt_output Output array of coordinate values.
+ * @param {number=} opt_dimension Dimension (default is `2`).
+ * @return {Array<number>} Output array of coordinate values.
+ */
+
+
+function toEPSG4326(input, opt_output, opt_dimension) {
+  var length = input.length;
+  var dimension = opt_dimension > 1 ? opt_dimension : 2;
+  var output = opt_output;
+
+  if (output === undefined) {
+    if (dimension > 2) {
+      // preserve values beyond second dimension
+      output = input.slice();
+    } else {
+      output = new Array(length);
+    }
+  }
+
+  for (var i = 0; i < length; i += dimension) {
+    output[i] = 180 * input[i] / HALF_SIZE;
+    output[i + 1] = 360 * Math.atan(Math.exp(input[i + 1] / RADIUS)) / Math.PI - 90;
+  }
+
+  return output;
+}
+},{"./Projection.js":"node_modules/ol/proj/Projection.js","./Units.js":"node_modules/ol/proj/Units.js","../math.js":"node_modules/ol/math.js"}],"node_modules/ol/proj/epsg4326.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.PROJECTIONS = exports.METERS_PER_UNIT = exports.EXTENT = exports.RADIUS = void 0;
+
+var _Projection = _interopRequireDefault(require("./Projection.js"));
+
+var _Units = _interopRequireDefault(require("./Units.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+/**
+ * @module ol/proj/epsg4326
+ */
+
+
+/**
+ * Semi-major radius of the WGS84 ellipsoid.
+ *
+ * @const
+ * @type {number}
+ */
+var RADIUS = 6378137;
+/**
+ * Extent of the EPSG:4326 projection which is the whole world.
+ *
+ * @const
+ * @type {import("../extent.js").Extent}
+ */
+
+exports.RADIUS = RADIUS;
+var EXTENT = [-180, -90, 180, 90];
+/**
+ * @const
+ * @type {number}
+ */
+
+exports.EXTENT = EXTENT;
+var METERS_PER_UNIT = Math.PI * RADIUS / 180;
+/**
+ * @classdesc
+ * Projection object for WGS84 geographic coordinates (EPSG:4326).
+ *
+ * Note that OpenLayers does not strictly comply with the EPSG definition.
+ * The EPSG registry defines 4326 as a CRS for Latitude,Longitude (y,x).
+ * OpenLayers treats EPSG:4326 as a pseudo-projection, with x,y coordinates.
+ */
+
+exports.METERS_PER_UNIT = METERS_PER_UNIT;
+
+var EPSG4326Projection =
+/** @class */
+function (_super) {
+  __extends(EPSG4326Projection, _super);
+  /**
+   * @param {string} code Code.
+   * @param {string=} opt_axisOrientation Axis orientation.
+   */
+
+
+  function EPSG4326Projection(code, opt_axisOrientation) {
+    return _super.call(this, {
+      code: code,
+      units: _Units.default.DEGREES,
+      extent: EXTENT,
+      axisOrientation: opt_axisOrientation,
+      global: true,
+      metersPerUnit: METERS_PER_UNIT,
+      worldExtent: EXTENT
+    }) || this;
+  }
+
+  return EPSG4326Projection;
+}(_Projection.default);
+/**
+ * Projections equal to EPSG:4326.
+ *
+ * @const
+ * @type {Array<import("./Projection.js").default>}
+ */
+
+
+var PROJECTIONS = [new EPSG4326Projection('CRS:84'), new EPSG4326Projection('EPSG:4326', 'neu'), new EPSG4326Projection('urn:ogc:def:crs:OGC:1.3:CRS84'), new EPSG4326Projection('urn:ogc:def:crs:OGC:2:84'), new EPSG4326Projection('http://www.opengis.net/gml/srs/epsg.xml#4326', 'neu')];
+exports.PROJECTIONS = PROJECTIONS;
+},{"./Projection.js":"node_modules/ol/proj/Projection.js","./Units.js":"node_modules/ol/proj/Units.js"}],"node_modules/ol/proj/projections.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.clear = clear;
+exports.get = get;
+exports.add = add;
+
+/**
+ * @module ol/proj/projections
+ */
+
+/**
+ * @type {Object<string, import("./Projection.js").default>}
+ */
+var cache = {};
+/**
+ * Clear the projections cache.
+ */
+
+function clear() {
+  cache = {};
+}
+/**
+ * Get a cached projection by code.
+ * @param {string} code The code for the projection.
+ * @return {import("./Projection.js").default} The projection (if cached).
+ */
+
+
+function get(code) {
+  return cache[code] || cache[code.replace(/urn:(x-)?ogc:def:crs:EPSG:(.*:)?(\w+)$/, 'EPSG:$3')] || null;
+}
+/**
+ * Add a projection to the cache.
+ * @param {string} code The projection code.
+ * @param {import("./Projection.js").default} projection The projection to cache.
+ */
+
+
+function add(code, projection) {
+  cache[code] = projection;
+}
+},{}],"node_modules/ol/proj/transforms.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.clear = clear;
+exports.add = add;
+exports.remove = remove;
+exports.get = get;
+
+var _obj = require("../obj.js");
+
+/**
+ * @module ol/proj/transforms
+ */
+
+/**
+ * @private
+ * @type {!Object<string, Object<string, import("../proj.js").TransformFunction>>}
+ */
+var transforms = {};
+/**
+ * Clear the transform cache.
+ */
+
+function clear() {
+  transforms = {};
+}
+/**
+ * Registers a conversion function to convert coordinates from the source
+ * projection to the destination projection.
+ *
+ * @param {import("./Projection.js").default} source Source.
+ * @param {import("./Projection.js").default} destination Destination.
+ * @param {import("../proj.js").TransformFunction} transformFn Transform.
+ */
+
+
+function add(source, destination, transformFn) {
+  var sourceCode = source.getCode();
+  var destinationCode = destination.getCode();
+
+  if (!(sourceCode in transforms)) {
+    transforms[sourceCode] = {};
+  }
+
+  transforms[sourceCode][destinationCode] = transformFn;
+}
+/**
+ * Unregisters the conversion function to convert coordinates from the source
+ * projection to the destination projection.  This method is used to clean up
+ * cached transforms during testing.
+ *
+ * @param {import("./Projection.js").default} source Source projection.
+ * @param {import("./Projection.js").default} destination Destination projection.
+ * @return {import("../proj.js").TransformFunction} transformFn The unregistered transform.
+ */
+
+
+function remove(source, destination) {
+  var sourceCode = source.getCode();
+  var destinationCode = destination.getCode();
+  var transform = transforms[sourceCode][destinationCode];
+  delete transforms[sourceCode][destinationCode];
+
+  if ((0, _obj.isEmpty)(transforms[sourceCode])) {
+    delete transforms[sourceCode];
+  }
+
+  return transform;
+}
+/**
+ * Get a transform given a source code and a destination code.
+ * @param {string} sourceCode The code for the source projection.
+ * @param {string} destinationCode The code for the destination projection.
+ * @return {import("../proj.js").TransformFunction|undefined} The transform function (if found).
+ */
+
+
+function get(sourceCode, destinationCode) {
+  var transform;
+
+  if (sourceCode in transforms && destinationCode in transforms[sourceCode]) {
+    transform = transforms[sourceCode][destinationCode];
+  }
+
+  return transform;
+}
+},{"../obj.js":"node_modules/ol/obj.js"}],"node_modules/ol/sphere.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -4093,2589 +6675,7 @@ function addCommon() {
 }
 
 addCommon();
-},{"./proj/Projection.js":"node_modules/ol/proj/Projection.js","./proj/Units.js":"node_modules/ol/proj/Units.js","./proj/epsg3857.js":"node_modules/ol/proj/epsg3857.js","./proj/epsg4326.js":"node_modules/ol/proj/epsg4326.js","./proj/projections.js":"node_modules/ol/proj/projections.js","./proj/transforms.js":"node_modules/ol/proj/transforms.js","./extent.js":"node_modules/ol/extent.js","./math.js":"node_modules/ol/math.js","./sphere.js":"node_modules/ol/sphere.js","./coordinate.js":"node_modules/ol/coordinate.js"}],"node_modules/ol/events/Event.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.stopPropagation = stopPropagation;
-exports.preventDefault = preventDefault;
-exports.default = void 0;
-
-/**
- * @module ol/events/Event
- */
-
-/**
- * @classdesc
- * Stripped down implementation of the W3C DOM Level 2 Event interface.
- * See https://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-interface.
- *
- * This implementation only provides `type` and `target` properties, and
- * `stopPropagation` and `preventDefault` methods. It is meant as base class
- * for higher level events defined in the library, and works with
- * {@link module:ol/events/Target~Target}.
- */
-var BaseEvent =
-/** @class */
-function () {
-  /**
-   * @param {string} type Type.
-   */
-  function BaseEvent(type) {
-    /**
-     * @type {boolean}
-     */
-    this.propagationStopped;
-    /**
-     * The event type.
-     * @type {string}
-     * @api
-     */
-
-    this.type = type;
-    /**
-     * The event target.
-     * @type {Object}
-     * @api
-     */
-
-    this.target = null;
-  }
-  /**
-   * Stop event propagation.
-   * @api
-   */
-
-
-  BaseEvent.prototype.preventDefault = function () {
-    this.propagationStopped = true;
-  };
-  /**
-   * Stop event propagation.
-   * @api
-   */
-
-
-  BaseEvent.prototype.stopPropagation = function () {
-    this.propagationStopped = true;
-  };
-
-  return BaseEvent;
-}();
-/**
- * @param {Event|import("./Event.js").default} evt Event
- */
-
-
-function stopPropagation(evt) {
-  evt.stopPropagation();
-}
-/**
- * @param {Event|import("./Event.js").default} evt Event
- */
-
-
-function preventDefault(evt) {
-  evt.preventDefault();
-}
-
-var _default = BaseEvent;
-exports.default = _default;
-},{}],"node_modules/ol/ObjectEventType.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * @module ol/ObjectEventType
- */
-
-/**
- * @enum {string}
- */
-var _default = {
-  /**
-   * Triggered when a property is changed.
-   * @event module:ol/Object.ObjectEvent#propertychange
-   * @api
-   */
-  PROPERTYCHANGE: 'propertychange'
-};
-exports.default = _default;
-},{}],"node_modules/ol/Disposable.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * @module ol/Disposable
- */
-
-/**
- * @classdesc
- * Objects that need to clean up after themselves.
- */
-var Disposable =
-/** @class */
-function () {
-  function Disposable() {
-    /**
-     * The object has already been disposed.
-     * @type {boolean}
-     * @protected
-     */
-    this.disposed = false;
-  }
-  /**
-   * Clean up.
-   */
-
-
-  Disposable.prototype.dispose = function () {
-    if (!this.disposed) {
-      this.disposed = true;
-      this.disposeInternal();
-    }
-  };
-  /**
-   * Extension point for disposable objects.
-   * @protected
-   */
-
-
-  Disposable.prototype.disposeInternal = function () {};
-
-  return Disposable;
-}();
-
-var _default = Disposable;
-exports.default = _default;
-},{}],"node_modules/ol/array.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.binarySearch = binarySearch;
-exports.numberSafeCompareFunction = numberSafeCompareFunction;
-exports.includes = includes;
-exports.linearFindNearest = linearFindNearest;
-exports.reverseSubArray = reverseSubArray;
-exports.extend = extend;
-exports.remove = remove;
-exports.find = find;
-exports.equals = equals;
-exports.stableSort = stableSort;
-exports.findIndex = findIndex;
-exports.isSorted = isSorted;
-
-/**
- * @module ol/array
- */
-
-/**
- * Performs a binary search on the provided sorted list and returns the index of the item if found. If it can't be found it'll return -1.
- * https://github.com/darkskyapp/binary-search
- *
- * @param {Array<*>} haystack Items to search through.
- * @param {*} needle The item to look for.
- * @param {Function=} opt_comparator Comparator function.
- * @return {number} The index of the item if found, -1 if not.
- */
-function binarySearch(haystack, needle, opt_comparator) {
-  var mid, cmp;
-  var comparator = opt_comparator || numberSafeCompareFunction;
-  var low = 0;
-  var high = haystack.length;
-  var found = false;
-
-  while (low < high) {
-    /* Note that "(low + high) >>> 1" may overflow, and results in a typecast
-     * to double (which gives the wrong results). */
-    mid = low + (high - low >> 1);
-    cmp = +comparator(haystack[mid], needle);
-
-    if (cmp < 0.0) {
-      /* Too low. */
-      low = mid + 1;
-    } else {
-      /* Key found or too high */
-      high = mid;
-      found = !cmp;
-    }
-  }
-  /* Key not found. */
-
-
-  return found ? low : ~low;
-}
-/**
- * Compare function for array sort that is safe for numbers.
- * @param {*} a The first object to be compared.
- * @param {*} b The second object to be compared.
- * @return {number} A negative number, zero, or a positive number as the first
- *     argument is less than, equal to, or greater than the second.
- */
-
-
-function numberSafeCompareFunction(a, b) {
-  return a > b ? 1 : a < b ? -1 : 0;
-}
-/**
- * Whether the array contains the given object.
- * @param {Array<*>} arr The array to test for the presence of the element.
- * @param {*} obj The object for which to test.
- * @return {boolean} The object is in the array.
- */
-
-
-function includes(arr, obj) {
-  return arr.indexOf(obj) >= 0;
-}
-/**
- * @param {Array<number>} arr Array.
- * @param {number} target Target.
- * @param {number} direction 0 means return the nearest, > 0
- *    means return the largest nearest, < 0 means return the
- *    smallest nearest.
- * @return {number} Index.
- */
-
-
-function linearFindNearest(arr, target, direction) {
-  var n = arr.length;
-
-  if (arr[0] <= target) {
-    return 0;
-  } else if (target <= arr[n - 1]) {
-    return n - 1;
-  } else {
-    var i = void 0;
-
-    if (direction > 0) {
-      for (i = 1; i < n; ++i) {
-        if (arr[i] < target) {
-          return i - 1;
-        }
-      }
-    } else if (direction < 0) {
-      for (i = 1; i < n; ++i) {
-        if (arr[i] <= target) {
-          return i;
-        }
-      }
-    } else {
-      for (i = 1; i < n; ++i) {
-        if (arr[i] == target) {
-          return i;
-        } else if (arr[i] < target) {
-          if (arr[i - 1] - target < target - arr[i]) {
-            return i - 1;
-          } else {
-            return i;
-          }
-        }
-      }
-    }
-
-    return n - 1;
-  }
-}
-/**
- * @param {Array<*>} arr Array.
- * @param {number} begin Begin index.
- * @param {number} end End index.
- */
-
-
-function reverseSubArray(arr, begin, end) {
-  while (begin < end) {
-    var tmp = arr[begin];
-    arr[begin] = arr[end];
-    arr[end] = tmp;
-    ++begin;
-    --end;
-  }
-}
-/**
- * @param {Array<VALUE>} arr The array to modify.
- * @param {!Array<VALUE>|VALUE} data The elements or arrays of elements to add to arr.
- * @template VALUE
- */
-
-
-function extend(arr, data) {
-  var extension = Array.isArray(data) ? data : [data];
-  var length = extension.length;
-
-  for (var i = 0; i < length; i++) {
-    arr[arr.length] = extension[i];
-  }
-}
-/**
- * @param {Array<VALUE>} arr The array to modify.
- * @param {VALUE} obj The element to remove.
- * @template VALUE
- * @return {boolean} If the element was removed.
- */
-
-
-function remove(arr, obj) {
-  var i = arr.indexOf(obj);
-  var found = i > -1;
-
-  if (found) {
-    arr.splice(i, 1);
-  }
-
-  return found;
-}
-/**
- * @param {Array<VALUE>} arr The array to search in.
- * @param {function(VALUE, number, ?) : boolean} func The function to compare.
- * @template VALUE
- * @return {VALUE|null} The element found or null.
- */
-
-
-function find(arr, func) {
-  var length = arr.length >>> 0;
-  var value;
-
-  for (var i = 0; i < length; i++) {
-    value = arr[i];
-
-    if (func(value, i, arr)) {
-      return value;
-    }
-  }
-
-  return null;
-}
-/**
- * @param {Array|Uint8ClampedArray} arr1 The first array to compare.
- * @param {Array|Uint8ClampedArray} arr2 The second array to compare.
- * @return {boolean} Whether the two arrays are equal.
- */
-
-
-function equals(arr1, arr2) {
-  var len1 = arr1.length;
-
-  if (len1 !== arr2.length) {
-    return false;
-  }
-
-  for (var i = 0; i < len1; i++) {
-    if (arr1[i] !== arr2[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-/**
- * Sort the passed array such that the relative order of equal elements is preverved.
- * See https://en.wikipedia.org/wiki/Sorting_algorithm#Stability for details.
- * @param {Array<*>} arr The array to sort (modifies original).
- * @param {!function(*, *): number} compareFnc Comparison function.
- * @api
- */
-
-
-function stableSort(arr, compareFnc) {
-  var length = arr.length;
-  var tmp = Array(arr.length);
-  var i;
-
-  for (i = 0; i < length; i++) {
-    tmp[i] = {
-      index: i,
-      value: arr[i]
-    };
-  }
-
-  tmp.sort(function (a, b) {
-    return compareFnc(a.value, b.value) || a.index - b.index;
-  });
-
-  for (i = 0; i < arr.length; i++) {
-    arr[i] = tmp[i].value;
-  }
-}
-/**
- * @param {Array<*>} arr The array to search in.
- * @param {Function} func Comparison function.
- * @return {number} Return index.
- */
-
-
-function findIndex(arr, func) {
-  var index;
-  var found = !arr.every(function (el, idx) {
-    index = idx;
-    return !func(el, idx, arr);
-  });
-  return found ? index : -1;
-}
-/**
- * @param {Array<*>} arr The array to test.
- * @param {Function=} opt_func Comparison function.
- * @param {boolean=} opt_strict Strictly sorted (default false).
- * @return {boolean} Return index.
- */
-
-
-function isSorted(arr, opt_func, opt_strict) {
-  var compare = opt_func || numberSafeCompareFunction;
-  return arr.every(function (currentVal, index) {
-    if (index === 0) {
-      return true;
-    }
-
-    var res = compare(arr[index - 1], currentVal);
-    return !(res > 0 || opt_strict && res === 0);
-  });
-}
-},{}],"node_modules/ol/functions.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.TRUE = TRUE;
-exports.FALSE = FALSE;
-exports.VOID = VOID;
-exports.memoizeOne = memoizeOne;
-
-var _array = require("./array.js");
-
-/**
- * @module ol/functions
- */
-
-/**
- * Always returns true.
- * @returns {boolean} true.
- */
-function TRUE() {
-  return true;
-}
-/**
- * Always returns false.
- * @returns {boolean} false.
- */
-
-
-function FALSE() {
-  return false;
-}
-/**
- * A reusable function, used e.g. as a default for callbacks.
- *
- * @return {void} Nothing.
- */
-
-
-function VOID() {}
-/**
- * Wrap a function in another function that remembers the last return.  If the
- * returned function is called twice in a row with the same arguments and the same
- * this object, it will return the value from the first call in the second call.
- *
- * @param {function(...any): ReturnType} fn The function to memoize.
- * @return {function(...any): ReturnType} The memoized function.
- * @template ReturnType
- */
-
-
-function memoizeOne(fn) {
-  var called = false;
-  /** @type {ReturnType} */
-
-  var lastResult;
-  /** @type {Array<any>} */
-
-  var lastArgs;
-  var lastThis;
-  return function () {
-    var nextArgs = Array.prototype.slice.call(arguments);
-
-    if (!called || this !== lastThis || !(0, _array.equals)(nextArgs, lastArgs)) {
-      called = true;
-      lastThis = this;
-      lastArgs = nextArgs;
-      lastResult = fn.apply(this, arguments);
-    }
-
-    return lastResult;
-  };
-}
-},{"./array.js":"node_modules/ol/array.js"}],"node_modules/ol/events/Target.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _Disposable = _interopRequireDefault(require("../Disposable.js"));
-
-var _Event = _interopRequireDefault(require("./Event.js"));
-
-var _functions = require("../functions.js");
-
-var _obj = require("../obj.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/events/Target
- */
-
-
-/**
- * @typedef {EventTarget|Target} EventTargetLike
- */
-
-/**
- * @classdesc
- * A simplified implementation of the W3C DOM Level 2 EventTarget interface.
- * See https://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113/events.html#Events-EventTarget.
- *
- * There are two important simplifications compared to the specification:
- *
- * 1. The handling of `useCapture` in `addEventListener` and
- *    `removeEventListener`. There is no real capture model.
- * 2. The handling of `stopPropagation` and `preventDefault` on `dispatchEvent`.
- *    There is no event target hierarchy. When a listener calls
- *    `stopPropagation` or `preventDefault` on an event object, it means that no
- *    more listeners after this one will be called. Same as when the listener
- *    returns false.
- */
-var Target =
-/** @class */
-function (_super) {
-  __extends(Target, _super);
-  /**
-   * @param {*=} opt_target Default event target for dispatched events.
-   */
-
-
-  function Target(opt_target) {
-    var _this = _super.call(this) || this;
-    /**
-     * @private
-     * @type {*}
-     */
-
-
-    _this.eventTarget_ = opt_target;
-    /**
-     * @private
-     * @type {Object<string, number>}
-     */
-
-    _this.pendingRemovals_ = null;
-    /**
-     * @private
-     * @type {Object<string, number>}
-     */
-
-    _this.dispatching_ = null;
-    /**
-     * @private
-     * @type {Object<string, Array<import("../events.js").Listener>>}
-     */
-
-    _this.listeners_ = null;
-    return _this;
-  }
-  /**
-   * @param {string} type Type.
-   * @param {import("../events.js").Listener} listener Listener.
-   */
-
-
-  Target.prototype.addEventListener = function (type, listener) {
-    if (!type || !listener) {
-      return;
-    }
-
-    var listeners = this.listeners_ || (this.listeners_ = {});
-    var listenersForType = listeners[type] || (listeners[type] = []);
-
-    if (listenersForType.indexOf(listener) === -1) {
-      listenersForType.push(listener);
-    }
-  };
-  /**
-   * Dispatches an event and calls all listeners listening for events
-   * of this type. The event parameter can either be a string or an
-   * Object with a `type` property.
-   *
-   * @param {import("./Event.js").default|string} event Event object.
-   * @return {boolean|undefined} `false` if anyone called preventDefault on the
-   *     event object or if any of the listeners returned false.
-   * @api
-   */
-
-
-  Target.prototype.dispatchEvent = function (event) {
-    /** @type {import("./Event.js").default|Event} */
-    var evt = typeof event === 'string' ? new _Event.default(event) : event;
-    var type = evt.type;
-
-    if (!evt.target) {
-      evt.target = this.eventTarget_ || this;
-    }
-
-    var listeners = this.listeners_ && this.listeners_[type];
-    var propagate;
-
-    if (listeners) {
-      var dispatching = this.dispatching_ || (this.dispatching_ = {});
-      var pendingRemovals = this.pendingRemovals_ || (this.pendingRemovals_ = {});
-
-      if (!(type in dispatching)) {
-        dispatching[type] = 0;
-        pendingRemovals[type] = 0;
-      }
-
-      ++dispatching[type];
-
-      for (var i = 0, ii = listeners.length; i < ii; ++i) {
-        if ('handleEvent' in listeners[i]) {
-          propagate =
-          /** @type {import("../events.js").ListenerObject} */
-          listeners[i].handleEvent(evt);
-        } else {
-          propagate =
-          /** @type {import("../events.js").ListenerFunction} */
-          listeners[i].call(this, evt);
-        }
-
-        if (propagate === false || evt.propagationStopped) {
-          propagate = false;
-          break;
-        }
-      }
-
-      --dispatching[type];
-
-      if (dispatching[type] === 0) {
-        var pr = pendingRemovals[type];
-        delete pendingRemovals[type];
-
-        while (pr--) {
-          this.removeEventListener(type, _functions.VOID);
-        }
-
-        delete dispatching[type];
-      }
-
-      return propagate;
-    }
-  };
-  /**
-   * Clean up.
-   */
-
-
-  Target.prototype.disposeInternal = function () {
-    this.listeners_ && (0, _obj.clear)(this.listeners_);
-  };
-  /**
-   * Get the listeners for a specified event type. Listeners are returned in the
-   * order that they will be called in.
-   *
-   * @param {string} type Type.
-   * @return {Array<import("../events.js").Listener>|undefined} Listeners.
-   */
-
-
-  Target.prototype.getListeners = function (type) {
-    return this.listeners_ && this.listeners_[type] || undefined;
-  };
-  /**
-   * @param {string=} opt_type Type. If not provided,
-   *     `true` will be returned if this event target has any listeners.
-   * @return {boolean} Has listeners.
-   */
-
-
-  Target.prototype.hasListener = function (opt_type) {
-    if (!this.listeners_) {
-      return false;
-    }
-
-    return opt_type ? opt_type in this.listeners_ : Object.keys(this.listeners_).length > 0;
-  };
-  /**
-   * @param {string} type Type.
-   * @param {import("../events.js").Listener} listener Listener.
-   */
-
-
-  Target.prototype.removeEventListener = function (type, listener) {
-    var listeners = this.listeners_ && this.listeners_[type];
-
-    if (listeners) {
-      var index = listeners.indexOf(listener);
-
-      if (index !== -1) {
-        if (this.pendingRemovals_ && type in this.pendingRemovals_) {
-          // make listener a no-op, and remove later in #dispatchEvent()
-          listeners[index] = _functions.VOID;
-          ++this.pendingRemovals_[type];
-        } else {
-          listeners.splice(index, 1);
-
-          if (listeners.length === 0) {
-            delete this.listeners_[type];
-          }
-        }
-      }
-    }
-  };
-
-  return Target;
-}(_Disposable.default);
-
-var _default = Target;
-exports.default = _default;
-},{"../Disposable.js":"node_modules/ol/Disposable.js","./Event.js":"node_modules/ol/events/Event.js","../functions.js":"node_modules/ol/functions.js","../obj.js":"node_modules/ol/obj.js"}],"node_modules/ol/events/EventType.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * @module ol/events/EventType
- */
-
-/**
- * @enum {string}
- * @const
- */
-var _default = {
-  /**
-   * Generic change event. Triggered when the revision counter is increased.
-   * @event module:ol/events/Event~BaseEvent#change
-   * @api
-   */
-  CHANGE: 'change',
-
-  /**
-   * Generic error event. Triggered when an error occurs.
-   * @event module:ol/events/Event~BaseEvent#error
-   * @api
-   */
-  ERROR: 'error',
-  BLUR: 'blur',
-  CLEAR: 'clear',
-  CONTEXTMENU: 'contextmenu',
-  CLICK: 'click',
-  DBLCLICK: 'dblclick',
-  DRAGENTER: 'dragenter',
-  DRAGOVER: 'dragover',
-  DROP: 'drop',
-  FOCUS: 'focus',
-  KEYDOWN: 'keydown',
-  KEYPRESS: 'keypress',
-  LOAD: 'load',
-  RESIZE: 'resize',
-  TOUCHMOVE: 'touchmove',
-  WHEEL: 'wheel'
-};
-exports.default = _default;
-},{}],"node_modules/ol/events.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.listen = listen;
-exports.listenOnce = listenOnce;
-exports.unlistenByKey = unlistenByKey;
-
-var _obj = require("./obj.js");
-
-/**
- * @module ol/events
- */
-
-/**
- * Key to use with {@link module:ol/Observable~Observable#unByKey}.
- * @typedef {Object} EventsKey
- * @property {ListenerFunction} listener
- * @property {import("./events/Target.js").EventTargetLike} target
- * @property {string} type
- * @api
- */
-
-/**
- * Listener function. This function is called with an event object as argument.
- * When the function returns `false`, event propagation will stop.
- *
- * @typedef {function((Event|import("./events/Event.js").default)): (void|boolean)} ListenerFunction
- * @api
- */
-
-/**
- * @typedef {Object} ListenerObject
- * @property {ListenerFunction} handleEvent
- */
-
-/**
- * @typedef {ListenerFunction|ListenerObject} Listener
- */
-
-/**
- * Registers an event listener on an event target. Inspired by
- * https://google.github.io/closure-library/api/source/closure/goog/events/events.js.src.html
- *
- * This function efficiently binds a `listener` to a `this` object, and returns
- * a key for use with {@link module:ol/events~unlistenByKey}.
- *
- * @param {import("./events/Target.js").EventTargetLike} target Event target.
- * @param {string} type Event type.
- * @param {ListenerFunction} listener Listener.
- * @param {Object=} opt_this Object referenced by the `this` keyword in the
- *     listener. Default is the `target`.
- * @param {boolean=} opt_once If true, add the listener as one-off listener.
- * @return {EventsKey} Unique key for the listener.
- */
-function listen(target, type, listener, opt_this, opt_once) {
-  if (opt_this && opt_this !== target) {
-    listener = listener.bind(opt_this);
-  }
-
-  if (opt_once) {
-    var originalListener_1 = listener;
-
-    listener = function () {
-      target.removeEventListener(type, listener);
-      originalListener_1.apply(this, arguments);
-    };
-  }
-
-  var eventsKey = {
-    target: target,
-    type: type,
-    listener: listener
-  };
-  target.addEventListener(type, listener);
-  return eventsKey;
-}
-/**
- * Registers a one-off event listener on an event target. Inspired by
- * https://google.github.io/closure-library/api/source/closure/goog/events/events.js.src.html
- *
- * This function efficiently binds a `listener` as self-unregistering listener
- * to a `this` object, and returns a key for use with
- * {@link module:ol/events~unlistenByKey} in case the listener needs to be
- * unregistered before it is called.
- *
- * When {@link module:ol/events~listen} is called with the same arguments after this
- * function, the self-unregistering listener will be turned into a permanent
- * listener.
- *
- * @param {import("./events/Target.js").EventTargetLike} target Event target.
- * @param {string} type Event type.
- * @param {ListenerFunction} listener Listener.
- * @param {Object=} opt_this Object referenced by the `this` keyword in the
- *     listener. Default is the `target`.
- * @return {EventsKey} Key for unlistenByKey.
- */
-
-
-function listenOnce(target, type, listener, opt_this) {
-  return listen(target, type, listener, opt_this, true);
-}
-/**
- * Unregisters event listeners on an event target. Inspired by
- * https://google.github.io/closure-library/api/source/closure/goog/events/events.js.src.html
- *
- * The argument passed to this function is the key returned from
- * {@link module:ol/events~listen} or {@link module:ol/events~listenOnce}.
- *
- * @param {EventsKey} key The key.
- */
-
-
-function unlistenByKey(key) {
-  if (key && key.target) {
-    key.target.removeEventListener(key.type, key.listener);
-    (0, _obj.clear)(key);
-  }
-}
-},{"./obj.js":"node_modules/ol/obj.js"}],"node_modules/ol/Observable.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.unByKey = unByKey;
-exports.default = void 0;
-
-var _Target = _interopRequireDefault(require("./events/Target.js"));
-
-var _EventType = _interopRequireDefault(require("./events/EventType.js"));
-
-var _events = require("./events.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/Observable
- */
-
-
-/**
- * @classdesc
- * Abstract base class; normally only used for creating subclasses and not
- * instantiated in apps.
- * An event target providing convenient methods for listener registration
- * and unregistration. A generic `change` event is always available through
- * {@link module:ol/Observable~Observable#changed}.
- *
- * @fires import("./events/Event.js").default
- * @api
- */
-var Observable =
-/** @class */
-function (_super) {
-  __extends(Observable, _super);
-
-  function Observable() {
-    var _this = _super.call(this) || this;
-    /**
-     * @private
-     * @type {number}
-     */
-
-
-    _this.revision_ = 0;
-    return _this;
-  }
-  /**
-   * Increases the revision counter and dispatches a 'change' event.
-   * @api
-   */
-
-
-  Observable.prototype.changed = function () {
-    ++this.revision_;
-    this.dispatchEvent(_EventType.default.CHANGE);
-  };
-  /**
-   * Get the version number for this object.  Each time the object is modified,
-   * its version number will be incremented.
-   * @return {number} Revision.
-   * @api
-   */
-
-
-  Observable.prototype.getRevision = function () {
-    return this.revision_;
-  };
-  /**
-   * Listen for a certain type of event.
-   * @param {string|Array<string>} type The event type or array of event types.
-   * @param {function(?): ?} listener The listener function.
-   * @return {import("./events.js").EventsKey|Array<import("./events.js").EventsKey>} Unique key for the listener. If
-   *     called with an array of event types as the first argument, the return
-   *     will be an array of keys.
-   * @api
-   */
-
-
-  Observable.prototype.on = function (type, listener) {
-    if (Array.isArray(type)) {
-      var len = type.length;
-      var keys = new Array(len);
-
-      for (var i = 0; i < len; ++i) {
-        keys[i] = (0, _events.listen)(this, type[i], listener);
-      }
-
-      return keys;
-    } else {
-      return (0, _events.listen)(this,
-      /** @type {string} */
-      type, listener);
-    }
-  };
-  /**
-   * Listen once for a certain type of event.
-   * @param {string|Array<string>} type The event type or array of event types.
-   * @param {function(?): ?} listener The listener function.
-   * @return {import("./events.js").EventsKey|Array<import("./events.js").EventsKey>} Unique key for the listener. If
-   *     called with an array of event types as the first argument, the return
-   *     will be an array of keys.
-   * @api
-   */
-
-
-  Observable.prototype.once = function (type, listener) {
-    var key;
-
-    if (Array.isArray(type)) {
-      var len = type.length;
-      key = new Array(len);
-
-      for (var i = 0; i < len; ++i) {
-        key[i] = (0, _events.listenOnce)(this, type[i], listener);
-      }
-    } else {
-      key = (0, _events.listenOnce)(this,
-      /** @type {string} */
-      type, listener);
-    }
-    /** @type {Object} */
-
-
-    listener.ol_key = key;
-    return key;
-  };
-  /**
-   * Unlisten for a certain type of event.
-   * @param {string|Array<string>} type The event type or array of event types.
-   * @param {function(?): ?} listener The listener function.
-   * @api
-   */
-
-
-  Observable.prototype.un = function (type, listener) {
-    var key =
-    /** @type {Object} */
-    listener.ol_key;
-
-    if (key) {
-      unByKey(key);
-    } else if (Array.isArray(type)) {
-      for (var i = 0, ii = type.length; i < ii; ++i) {
-        this.removeEventListener(type[i], listener);
-      }
-    } else {
-      this.removeEventListener(type, listener);
-    }
-  };
-
-  return Observable;
-}(_Target.default);
-/**
- * Removes an event listener using the key returned by `on()` or `once()`.
- * @param {import("./events.js").EventsKey|Array<import("./events.js").EventsKey>} key The key returned by `on()`
- *     or `once()` (or an array of keys).
- * @api
- */
-
-
-function unByKey(key) {
-  if (Array.isArray(key)) {
-    for (var i = 0, ii = key.length; i < ii; ++i) {
-      (0, _events.unlistenByKey)(key[i]);
-    }
-  } else {
-    (0, _events.unlistenByKey)(
-    /** @type {import("./events.js").EventsKey} */
-    key);
-  }
-}
-
-var _default = Observable;
-exports.default = _default;
-},{"./events/Target.js":"node_modules/ol/events/Target.js","./events/EventType.js":"node_modules/ol/events/EventType.js","./events.js":"node_modules/ol/events.js"}],"node_modules/ol/Object.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getChangeEventType = getChangeEventType;
-exports.default = exports.ObjectEvent = void 0;
-
-var _Event = _interopRequireDefault(require("./events/Event.js"));
-
-var _ObjectEventType = _interopRequireDefault(require("./ObjectEventType.js"));
-
-var _Observable = _interopRequireDefault(require("./Observable.js"));
-
-var _obj = require("./obj.js");
-
-var _util = require("./util.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/Object
- */
-
-
-/**
- * @classdesc
- * Events emitted by {@link module:ol/Object~BaseObject} instances are instances of this type.
- */
-var ObjectEvent =
-/** @class */
-function (_super) {
-  __extends(ObjectEvent, _super);
-  /**
-   * @param {string} type The event type.
-   * @param {string} key The property name.
-   * @param {*} oldValue The old value for `key`.
-   */
-
-
-  function ObjectEvent(type, key, oldValue) {
-    var _this = _super.call(this, type) || this;
-    /**
-     * The name of the property whose value is changing.
-     * @type {string}
-     * @api
-     */
-
-
-    _this.key = key;
-    /**
-     * The old value. To get the new value use `e.target.get(e.key)` where
-     * `e` is the event object.
-     * @type {*}
-     * @api
-     */
-
-    _this.oldValue = oldValue;
-    return _this;
-  }
-
-  return ObjectEvent;
-}(_Event.default);
-
-exports.ObjectEvent = ObjectEvent;
-
-/**
- * @classdesc
- * Abstract base class; normally only used for creating subclasses and not
- * instantiated in apps.
- * Most non-trivial classes inherit from this.
- *
- * This extends {@link module:ol/Observable} with observable
- * properties, where each property is observable as well as the object as a
- * whole.
- *
- * Classes that inherit from this have pre-defined properties, to which you can
- * add your owns. The pre-defined properties are listed in this documentation as
- * 'Observable Properties', and have their own accessors; for example,
- * {@link module:ol/Map~Map} has a `target` property, accessed with
- * `getTarget()` and changed with `setTarget()`. Not all properties are however
- * settable. There are also general-purpose accessors `get()` and `set()`. For
- * example, `get('target')` is equivalent to `getTarget()`.
- *
- * The `set` accessors trigger a change event, and you can monitor this by
- * registering a listener. For example, {@link module:ol/View~View} has a
- * `center` property, so `view.on('change:center', function(evt) {...});` would
- * call the function whenever the value of the center property changes. Within
- * the function, `evt.target` would be the view, so `evt.target.getCenter()`
- * would return the new center.
- *
- * You can add your own observable properties with
- * `object.set('prop', 'value')`, and retrieve that with `object.get('prop')`.
- * You can listen for changes on that property value with
- * `object.on('change:prop', listener)`. You can get a list of all
- * properties with {@link module:ol/Object~BaseObject#getProperties}.
- *
- * Note that the observable properties are separate from standard JS properties.
- * You can, for example, give your map object a title with
- * `map.title='New title'` and with `map.set('title', 'Another title')`. The
- * first will be a `hasOwnProperty`; the second will appear in
- * `getProperties()`. Only the second is observable.
- *
- * Properties can be deleted by using the unset method. E.g.
- * object.unset('foo').
- *
- * @fires ObjectEvent
- * @api
- */
-var BaseObject =
-/** @class */
-function (_super) {
-  __extends(BaseObject, _super);
-  /**
-   * @param {Object<string, *>=} opt_values An object with key-value pairs.
-   */
-
-
-  function BaseObject(opt_values) {
-    var _this = _super.call(this) || this; // Call {@link module:ol/util~getUid} to ensure that the order of objects' ids is
-    // the same as the order in which they were created.  This also helps to
-    // ensure that object properties are always added in the same order, which
-    // helps many JavaScript engines generate faster code.
-
-
-    (0, _util.getUid)(_this);
-    /**
-     * @private
-     * @type {Object<string, *>}
-     */
-
-    _this.values_ = null;
-
-    if (opt_values !== undefined) {
-      _this.setProperties(opt_values);
-    }
-
-    return _this;
-  }
-  /**
-   * Gets a value.
-   * @param {string} key Key name.
-   * @return {*} Value.
-   * @api
-   */
-
-
-  BaseObject.prototype.get = function (key) {
-    var value;
-
-    if (this.values_ && this.values_.hasOwnProperty(key)) {
-      value = this.values_[key];
-    }
-
-    return value;
-  };
-  /**
-   * Get a list of object property names.
-   * @return {Array<string>} List of property names.
-   * @api
-   */
-
-
-  BaseObject.prototype.getKeys = function () {
-    return this.values_ && Object.keys(this.values_) || [];
-  };
-  /**
-   * Get an object of all property names and values.
-   * @return {Object<string, *>} Object.
-   * @api
-   */
-
-
-  BaseObject.prototype.getProperties = function () {
-    return this.values_ && (0, _obj.assign)({}, this.values_) || {};
-  };
-  /**
-   * @return {boolean} The object has properties.
-   */
-
-
-  BaseObject.prototype.hasProperties = function () {
-    return !!this.values_;
-  };
-  /**
-   * @param {string} key Key name.
-   * @param {*} oldValue Old value.
-   */
-
-
-  BaseObject.prototype.notify = function (key, oldValue) {
-    var eventType;
-    eventType = getChangeEventType(key);
-    this.dispatchEvent(new ObjectEvent(eventType, key, oldValue));
-    eventType = _ObjectEventType.default.PROPERTYCHANGE;
-    this.dispatchEvent(new ObjectEvent(eventType, key, oldValue));
-  };
-  /**
-   * Sets a value.
-   * @param {string} key Key name.
-   * @param {*} value Value.
-   * @param {boolean=} opt_silent Update without triggering an event.
-   * @api
-   */
-
-
-  BaseObject.prototype.set = function (key, value, opt_silent) {
-    var values = this.values_ || (this.values_ = {});
-
-    if (opt_silent) {
-      values[key] = value;
-    } else {
-      var oldValue = values[key];
-      values[key] = value;
-
-      if (oldValue !== value) {
-        this.notify(key, oldValue);
-      }
-    }
-  };
-  /**
-   * Sets a collection of key-value pairs.  Note that this changes any existing
-   * properties and adds new ones (it does not remove any existing properties).
-   * @param {Object<string, *>} values Values.
-   * @param {boolean=} opt_silent Update without triggering an event.
-   * @api
-   */
-
-
-  BaseObject.prototype.setProperties = function (values, opt_silent) {
-    for (var key in values) {
-      this.set(key, values[key], opt_silent);
-    }
-  };
-  /**
-   * Apply any properties from another object without triggering events.
-   * @param {BaseObject} source The source object.
-   * @protected
-   */
-
-
-  BaseObject.prototype.applyProperties = function (source) {
-    if (!source.values_) {
-      return;
-    }
-
-    (0, _obj.assign)(this.values_ || (this.values_ = {}), source.values_);
-  };
-  /**
-   * Unsets a property.
-   * @param {string} key Key name.
-   * @param {boolean=} opt_silent Unset without triggering an event.
-   * @api
-   */
-
-
-  BaseObject.prototype.unset = function (key, opt_silent) {
-    if (this.values_ && key in this.values_) {
-      var oldValue = this.values_[key];
-      delete this.values_[key];
-
-      if ((0, _obj.isEmpty)(this.values_)) {
-        this.values_ = null;
-      }
-
-      if (!opt_silent) {
-        this.notify(key, oldValue);
-      }
-    }
-  };
-
-  return BaseObject;
-}(_Observable.default);
-/**
- * @type {Object<string, string>}
- */
-
-
-var changeEventTypeCache = {};
-/**
- * @param {string} key Key name.
- * @return {string} Change name.
- */
-
-function getChangeEventType(key) {
-  return changeEventTypeCache.hasOwnProperty(key) ? changeEventTypeCache[key] : changeEventTypeCache[key] = 'change:' + key;
-}
-
-var _default = BaseObject;
-exports.default = _default;
-},{"./events/Event.js":"node_modules/ol/events/Event.js","./ObjectEventType.js":"node_modules/ol/ObjectEventType.js","./Observable.js":"node_modules/ol/Observable.js","./obj.js":"node_modules/ol/obj.js","./util.js":"node_modules/ol/util.js"}],"node_modules/ol/CollectionEventType.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * @module ol/CollectionEventType
- */
-
-/**
- * @enum {string}
- */
-var _default = {
-  /**
-   * Triggered when an item is added to the collection.
-   * @event module:ol/Collection.CollectionEvent#add
-   * @api
-   */
-  ADD: 'add',
-
-  /**
-   * Triggered when an item is removed from the collection.
-   * @event module:ol/Collection.CollectionEvent#remove
-   * @api
-   */
-  REMOVE: 'remove'
-};
-exports.default = _default;
-},{}],"node_modules/ol/Collection.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = exports.CollectionEvent = void 0;
-
-var _AssertionError = _interopRequireDefault(require("./AssertionError.js"));
-
-var _Object = _interopRequireDefault(require("./Object.js"));
-
-var _CollectionEventType = _interopRequireDefault(require("./CollectionEventType.js"));
-
-var _Event = _interopRequireDefault(require("./events/Event.js"));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/Collection
- */
-
-
-/**
- * @enum {string}
- * @private
- */
-var Property = {
-  LENGTH: 'length'
-};
-/**
- * @classdesc
- * Events emitted by {@link module:ol/Collection~Collection} instances are instances of this
- * type.
- */
-
-var CollectionEvent =
-/** @class */
-function (_super) {
-  __extends(CollectionEvent, _super);
-  /**
-   * @param {import("./CollectionEventType.js").default} type Type.
-   * @param {*=} opt_element Element.
-   * @param {number=} opt_index The index of the added or removed element.
-   */
-
-
-  function CollectionEvent(type, opt_element, opt_index) {
-    var _this = _super.call(this, type) || this;
-    /**
-     * The element that is added to or removed from the collection.
-     * @type {*}
-     * @api
-     */
-
-
-    _this.element = opt_element;
-    /**
-     * The index of the added or removed element.
-     * @type {number}
-     * @api
-     */
-
-    _this.index = opt_index;
-    return _this;
-  }
-
-  return CollectionEvent;
-}(_Event.default);
-
-exports.CollectionEvent = CollectionEvent;
-
-/**
- * @typedef {Object} Options
- * @property {boolean} [unique=false] Disallow the same item from being added to
- * the collection twice.
- */
-
-/**
- * @classdesc
- * An expanded version of standard JS Array, adding convenience methods for
- * manipulation. Add and remove changes to the Collection trigger a Collection
- * event. Note that this does not cover changes to the objects _within_ the
- * Collection; they trigger events on the appropriate object, not on the
- * Collection as a whole.
- *
- * @fires CollectionEvent
- *
- * @template T
- * @api
- */
-var Collection =
-/** @class */
-function (_super) {
-  __extends(Collection, _super);
-  /**
-   * @param {Array<T>=} opt_array Array.
-   * @param {Options=} opt_options Collection options.
-   */
-
-
-  function Collection(opt_array, opt_options) {
-    var _this = _super.call(this) || this;
-
-    var options = opt_options || {};
-    /**
-     * @private
-     * @type {boolean}
-     */
-
-    _this.unique_ = !!options.unique;
-    /**
-     * @private
-     * @type {!Array<T>}
-     */
-
-    _this.array_ = opt_array ? opt_array : [];
-
-    if (_this.unique_) {
-      for (var i = 0, ii = _this.array_.length; i < ii; ++i) {
-        _this.assertUnique_(_this.array_[i], i);
-      }
-    }
-
-    _this.updateLength_();
-
-    return _this;
-  }
-  /**
-   * Remove all elements from the collection.
-   * @api
-   */
-
-
-  Collection.prototype.clear = function () {
-    while (this.getLength() > 0) {
-      this.pop();
-    }
-  };
-  /**
-   * Add elements to the collection.  This pushes each item in the provided array
-   * to the end of the collection.
-   * @param {!Array<T>} arr Array.
-   * @return {Collection<T>} This collection.
-   * @api
-   */
-
-
-  Collection.prototype.extend = function (arr) {
-    for (var i = 0, ii = arr.length; i < ii; ++i) {
-      this.push(arr[i]);
-    }
-
-    return this;
-  };
-  /**
-   * Iterate over each element, calling the provided callback.
-   * @param {function(T, number, Array<T>): *} f The function to call
-   *     for every element. This function takes 3 arguments (the element, the
-   *     index and the array). The return value is ignored.
-   * @api
-   */
-
-
-  Collection.prototype.forEach = function (f) {
-    var array = this.array_;
-
-    for (var i = 0, ii = array.length; i < ii; ++i) {
-      f(array[i], i, array);
-    }
-  };
-  /**
-   * Get a reference to the underlying Array object. Warning: if the array
-   * is mutated, no events will be dispatched by the collection, and the
-   * collection's "length" property won't be in sync with the actual length
-   * of the array.
-   * @return {!Array<T>} Array.
-   * @api
-   */
-
-
-  Collection.prototype.getArray = function () {
-    return this.array_;
-  };
-  /**
-   * Get the element at the provided index.
-   * @param {number} index Index.
-   * @return {T} Element.
-   * @api
-   */
-
-
-  Collection.prototype.item = function (index) {
-    return this.array_[index];
-  };
-  /**
-   * Get the length of this collection.
-   * @return {number} The length of the array.
-   * @observable
-   * @api
-   */
-
-
-  Collection.prototype.getLength = function () {
-    return this.get(Property.LENGTH);
-  };
-  /**
-   * Insert an element at the provided index.
-   * @param {number} index Index.
-   * @param {T} elem Element.
-   * @api
-   */
-
-
-  Collection.prototype.insertAt = function (index, elem) {
-    if (this.unique_) {
-      this.assertUnique_(elem);
-    }
-
-    this.array_.splice(index, 0, elem);
-    this.updateLength_();
-    this.dispatchEvent(new CollectionEvent(_CollectionEventType.default.ADD, elem, index));
-  };
-  /**
-   * Remove the last element of the collection and return it.
-   * Return `undefined` if the collection is empty.
-   * @return {T|undefined} Element.
-   * @api
-   */
-
-
-  Collection.prototype.pop = function () {
-    return this.removeAt(this.getLength() - 1);
-  };
-  /**
-   * Insert the provided element at the end of the collection.
-   * @param {T} elem Element.
-   * @return {number} New length of the collection.
-   * @api
-   */
-
-
-  Collection.prototype.push = function (elem) {
-    if (this.unique_) {
-      this.assertUnique_(elem);
-    }
-
-    var n = this.getLength();
-    this.insertAt(n, elem);
-    return this.getLength();
-  };
-  /**
-   * Remove the first occurrence of an element from the collection.
-   * @param {T} elem Element.
-   * @return {T|undefined} The removed element or undefined if none found.
-   * @api
-   */
-
-
-  Collection.prototype.remove = function (elem) {
-    var arr = this.array_;
-
-    for (var i = 0, ii = arr.length; i < ii; ++i) {
-      if (arr[i] === elem) {
-        return this.removeAt(i);
-      }
-    }
-
-    return undefined;
-  };
-  /**
-   * Remove the element at the provided index and return it.
-   * Return `undefined` if the collection does not contain this index.
-   * @param {number} index Index.
-   * @return {T|undefined} Value.
-   * @api
-   */
-
-
-  Collection.prototype.removeAt = function (index) {
-    var prev = this.array_[index];
-    this.array_.splice(index, 1);
-    this.updateLength_();
-    this.dispatchEvent(new CollectionEvent(_CollectionEventType.default.REMOVE, prev, index));
-    return prev;
-  };
-  /**
-   * Set the element at the provided index.
-   * @param {number} index Index.
-   * @param {T} elem Element.
-   * @api
-   */
-
-
-  Collection.prototype.setAt = function (index, elem) {
-    var n = this.getLength();
-
-    if (index < n) {
-      if (this.unique_) {
-        this.assertUnique_(elem, index);
-      }
-
-      var prev = this.array_[index];
-      this.array_[index] = elem;
-      this.dispatchEvent(new CollectionEvent(_CollectionEventType.default.REMOVE, prev, index));
-      this.dispatchEvent(new CollectionEvent(_CollectionEventType.default.ADD, elem, index));
-    } else {
-      for (var j = n; j < index; ++j) {
-        this.insertAt(j, undefined);
-      }
-
-      this.insertAt(index, elem);
-    }
-  };
-  /**
-   * @private
-   */
-
-
-  Collection.prototype.updateLength_ = function () {
-    this.set(Property.LENGTH, this.array_.length);
-  };
-  /**
-   * @private
-   * @param {T} elem Element.
-   * @param {number=} opt_except Optional index to ignore.
-   */
-
-
-  Collection.prototype.assertUnique_ = function (elem, opt_except) {
-    for (var i = 0, ii = this.array_.length; i < ii; ++i) {
-      if (this.array_[i] === elem && i !== opt_except) {
-        throw new _AssertionError.default(58);
-      }
-    }
-  };
-
-  return Collection;
-}(_Object.default);
-
-var _default = Collection;
-exports.default = _default;
-},{"./AssertionError.js":"node_modules/ol/AssertionError.js","./Object.js":"node_modules/ol/Object.js","./CollectionEventType.js":"node_modules/ol/CollectionEventType.js","./events/Event.js":"node_modules/ol/events/Event.js"}],"node_modules/ol/Feature.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.createStyleFunction = createStyleFunction;
-exports.default = void 0;
-
-var _Object = _interopRequireWildcard(require("./Object.js"));
-
-var _EventType = _interopRequireDefault(require("./events/EventType.js"));
-
-var _asserts = require("./asserts.js");
-
-var _events = require("./events.js");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return null; var cache = new WeakMap(); _getRequireWildcardCache = function () { return cache; }; return cache; }
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
-
-var __extends = void 0 && (void 0).__extends || function () {
-  var extendStatics = function (d, b) {
-    extendStatics = Object.setPrototypeOf || {
-      __proto__: []
-    } instanceof Array && function (d, b) {
-      d.__proto__ = b;
-    } || function (d, b) {
-      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-    };
-
-    return extendStatics(d, b);
-  };
-
-  return function (d, b) {
-    extendStatics(d, b);
-
-    function __() {
-      this.constructor = d;
-    }
-
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-  };
-}();
-/**
- * @module ol/Feature
- */
-
-
-/**
- * @typedef {typeof Feature|typeof import("./render/Feature.js").default} FeatureClass
- */
-
-/**
- * @typedef {Feature|import("./render/Feature.js").default} FeatureLike
- */
-
-/**
- * @classdesc
- * A vector object for geographic features with a geometry and other
- * attribute properties, similar to the features in vector file formats like
- * GeoJSON.
- *
- * Features can be styled individually with `setStyle`; otherwise they use the
- * style of their vector layer.
- *
- * Note that attribute properties are set as {@link module:ol/Object} properties on
- * the feature object, so they are observable, and have get/set accessors.
- *
- * Typically, a feature has a single geometry property. You can set the
- * geometry using the `setGeometry` method and get it with `getGeometry`.
- * It is possible to store more than one geometry on a feature using attribute
- * properties. By default, the geometry used for rendering is identified by
- * the property name `geometry`. If you want to use another geometry property
- * for rendering, use the `setGeometryName` method to change the attribute
- * property associated with the geometry for the feature.  For example:
- *
- * ```js
- *
- * import Feature from 'ol/Feature';
- * import Polygon from 'ol/geom/Polygon';
- * import Point from 'ol/geom/Point';
- *
- * var feature = new Feature({
- *   geometry: new Polygon(polyCoords),
- *   labelPoint: new Point(labelCoords),
- *   name: 'My Polygon'
- * });
- *
- * // get the polygon geometry
- * var poly = feature.getGeometry();
- *
- * // Render the feature as a point using the coordinates from labelPoint
- * feature.setGeometryName('labelPoint');
- *
- * // get the point geometry
- * var point = feature.getGeometry();
- * ```
- *
- * @api
- * @template {import("./geom/Geometry.js").default} Geometry
- */
-var Feature =
-/** @class */
-function (_super) {
-  __extends(Feature, _super);
-  /**
-   * @param {Geometry|Object<string, *>=} opt_geometryOrProperties
-   *     You may pass a Geometry object directly, or an object literal containing
-   *     properties. If you pass an object literal, you may include a Geometry
-   *     associated with a `geometry` key.
-   */
-
-
-  function Feature(opt_geometryOrProperties) {
-    var _this = _super.call(this) || this;
-    /**
-     * @private
-     * @type {number|string|undefined}
-     */
-
-
-    _this.id_ = undefined;
-    /**
-     * @type {string}
-     * @private
-     */
-
-    _this.geometryName_ = 'geometry';
-    /**
-     * User provided style.
-     * @private
-     * @type {import("./style/Style.js").StyleLike}
-     */
-
-    _this.style_ = null;
-    /**
-     * @private
-     * @type {import("./style/Style.js").StyleFunction|undefined}
-     */
-
-    _this.styleFunction_ = undefined;
-    /**
-     * @private
-     * @type {?import("./events.js").EventsKey}
-     */
-
-    _this.geometryChangeKey_ = null;
-
-    _this.addEventListener((0, _Object.getChangeEventType)(_this.geometryName_), _this.handleGeometryChanged_);
-
-    if (opt_geometryOrProperties) {
-      if (typeof
-      /** @type {?} */
-      opt_geometryOrProperties.getSimplifiedGeometry === 'function') {
-        var geometry =
-        /** @type {Geometry} */
-        opt_geometryOrProperties;
-
-        _this.setGeometry(geometry);
-      } else {
-        /** @type {Object<string, *>} */
-        var properties = opt_geometryOrProperties;
-
-        _this.setProperties(properties);
-      }
-    }
-
-    return _this;
-  }
-  /**
-   * Clone this feature. If the original feature has a geometry it
-   * is also cloned. The feature id is not set in the clone.
-   * @return {Feature} The clone.
-   * @api
-   */
-
-
-  Feature.prototype.clone = function () {
-    var clone = new Feature(this.hasProperties() ? this.getProperties() : null);
-    clone.setGeometryName(this.getGeometryName());
-    var geometry = this.getGeometry();
-
-    if (geometry) {
-      clone.setGeometry(geometry.clone());
-    }
-
-    var style = this.getStyle();
-
-    if (style) {
-      clone.setStyle(style);
-    }
-
-    return clone;
-  };
-  /**
-   * Get the feature's default geometry.  A feature may have any number of named
-   * geometries.  The "default" geometry (the one that is rendered by default) is
-   * set when calling {@link module:ol/Feature~Feature#setGeometry}.
-   * @return {Geometry|undefined} The default geometry for the feature.
-   * @api
-   * @observable
-   */
-
-
-  Feature.prototype.getGeometry = function () {
-    return (
-      /** @type {Geometry|undefined} */
-      this.get(this.geometryName_)
-    );
-  };
-  /**
-   * Get the feature identifier.  This is a stable identifier for the feature and
-   * is either set when reading data from a remote source or set explicitly by
-   * calling {@link module:ol/Feature~Feature#setId}.
-   * @return {number|string|undefined} Id.
-   * @api
-   */
-
-
-  Feature.prototype.getId = function () {
-    return this.id_;
-  };
-  /**
-   * Get the name of the feature's default geometry.  By default, the default
-   * geometry is named `geometry`.
-   * @return {string} Get the property name associated with the default geometry
-   *     for this feature.
-   * @api
-   */
-
-
-  Feature.prototype.getGeometryName = function () {
-    return this.geometryName_;
-  };
-  /**
-   * Get the feature's style. Will return what was provided to the
-   * {@link module:ol/Feature~Feature#setStyle} method.
-   * @return {import("./style/Style.js").StyleLike|undefined} The feature style.
-   * @api
-   */
-
-
-  Feature.prototype.getStyle = function () {
-    return this.style_;
-  };
-  /**
-   * Get the feature's style function.
-   * @return {import("./style/Style.js").StyleFunction|undefined} Return a function
-   * representing the current style of this feature.
-   * @api
-   */
-
-
-  Feature.prototype.getStyleFunction = function () {
-    return this.styleFunction_;
-  };
-  /**
-   * @private
-   */
-
-
-  Feature.prototype.handleGeometryChange_ = function () {
-    this.changed();
-  };
-  /**
-   * @private
-   */
-
-
-  Feature.prototype.handleGeometryChanged_ = function () {
-    if (this.geometryChangeKey_) {
-      (0, _events.unlistenByKey)(this.geometryChangeKey_);
-      this.geometryChangeKey_ = null;
-    }
-
-    var geometry = this.getGeometry();
-
-    if (geometry) {
-      this.geometryChangeKey_ = (0, _events.listen)(geometry, _EventType.default.CHANGE, this.handleGeometryChange_, this);
-    }
-
-    this.changed();
-  };
-  /**
-   * Set the default geometry for the feature.  This will update the property
-   * with the name returned by {@link module:ol/Feature~Feature#getGeometryName}.
-   * @param {Geometry|undefined} geometry The new geometry.
-   * @api
-   * @observable
-   */
-
-
-  Feature.prototype.setGeometry = function (geometry) {
-    this.set(this.geometryName_, geometry);
-  };
-  /**
-   * Set the style for the feature to override the layer style.  This can be a
-   * single style object, an array of styles, or a function that takes a
-   * resolution and returns an array of styles. To unset the feature style, call
-   * `setStyle()` without arguments or a falsey value.
-   * @param {import("./style/Style.js").StyleLike=} opt_style Style for this feature.
-   * @api
-   * @fires module:ol/events/Event~BaseEvent#event:change
-   */
-
-
-  Feature.prototype.setStyle = function (opt_style) {
-    this.style_ = opt_style;
-    this.styleFunction_ = !opt_style ? undefined : createStyleFunction(opt_style);
-    this.changed();
-  };
-  /**
-   * Set the feature id.  The feature id is considered stable and may be used when
-   * requesting features or comparing identifiers returned from a remote source.
-   * The feature id can be used with the
-   * {@link module:ol/source/Vector~VectorSource#getFeatureById} method.
-   * @param {number|string|undefined} id The feature id.
-   * @api
-   * @fires module:ol/events/Event~BaseEvent#event:change
-   */
-
-
-  Feature.prototype.setId = function (id) {
-    this.id_ = id;
-    this.changed();
-  };
-  /**
-   * Set the property name to be used when getting the feature's default geometry.
-   * When calling {@link module:ol/Feature~Feature#getGeometry}, the value of the property with
-   * this name will be returned.
-   * @param {string} name The property name of the default geometry.
-   * @api
-   */
-
-
-  Feature.prototype.setGeometryName = function (name) {
-    this.removeEventListener((0, _Object.getChangeEventType)(this.geometryName_), this.handleGeometryChanged_);
-    this.geometryName_ = name;
-    this.addEventListener((0, _Object.getChangeEventType)(this.geometryName_), this.handleGeometryChanged_);
-    this.handleGeometryChanged_();
-  };
-
-  return Feature;
-}(_Object.default);
-/**
- * Convert the provided object into a feature style function.  Functions passed
- * through unchanged.  Arrays of Style or single style objects wrapped
- * in a new feature style function.
- * @param {!import("./style/Style.js").StyleFunction|!Array<import("./style/Style.js").default>|!import("./style/Style.js").default} obj
- *     A feature style function, a single style, or an array of styles.
- * @return {import("./style/Style.js").StyleFunction} A style function.
- */
-
-
-function createStyleFunction(obj) {
-  if (typeof obj === 'function') {
-    return obj;
-  } else {
-    /**
-     * @type {Array<import("./style/Style.js").default>}
-     */
-    var styles_1;
-
-    if (Array.isArray(obj)) {
-      styles_1 = obj;
-    } else {
-      (0, _asserts.assert)(typeof
-      /** @type {?} */
-      obj.getZIndex === 'function', 41); // Expected an `import("./style/Style.js").Style` or an array of `import("./style/Style.js").Style`
-
-      var style =
-      /** @type {import("./style/Style.js").default} */
-      obj;
-      styles_1 = [style];
-    }
-
-    return function () {
-      return styles_1;
-    };
-  }
-}
-
-var _default = Feature;
-exports.default = _default;
-},{"./Object.js":"node_modules/ol/Object.js","./events/EventType.js":"node_modules/ol/events/EventType.js","./asserts.js":"node_modules/ol/asserts.js","./events.js":"node_modules/ol/events.js"}],"node_modules/ol/geom/GeometryLayout.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-/**
- * @module ol/geom/GeometryLayout
- */
-
-/**
- * The coordinate layout for geometries, indicating whether a 3rd or 4th z ('Z')
- * or measure ('M') coordinate is available. Supported values are `'XY'`,
- * `'XYZ'`, `'XYM'`, `'XYZM'`.
- * @enum {string}
- */
-var _default = {
-  XY: 'XY',
-  XYZ: 'XYZ',
-  XYM: 'XYM',
-  XYZM: 'XYZM'
-};
-exports.default = _default;
-},{}],"node_modules/ol/transform.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.create = create;
-exports.reset = reset;
-exports.multiply = multiply;
-exports.set = set;
-exports.setFromArray = setFromArray;
-exports.apply = apply;
-exports.rotate = rotate;
-exports.scale = scale;
-exports.makeScale = makeScale;
-exports.translate = translate;
-exports.compose = compose;
-exports.composeCssTransform = composeCssTransform;
-exports.invert = invert;
-exports.makeInverse = makeInverse;
-exports.determinant = determinant;
-exports.toString = toString;
-
-var _asserts = require("./asserts.js");
-
-/**
- * @module ol/transform
- */
-
-/**
- * An array representing an affine 2d transformation for use with
- * {@link module:ol/transform} functions. The array has 6 elements.
- * @typedef {!Array<number>} Transform
- * @api
- */
-
-/**
- * Collection of affine 2d transformation functions. The functions work on an
- * array of 6 elements. The element order is compatible with the [SVGMatrix
- * interface](https://developer.mozilla.org/en-US/docs/Web/API/SVGMatrix) and is
- * a subset (elements a to f) of a 3×3 matrix:
- * ```
- * [ a c e ]
- * [ b d f ]
- * [ 0 0 1 ]
- * ```
- */
-
-/**
- * @private
- * @type {Transform}
- */
-var tmp_ = new Array(6);
-/**
- * Create an identity transform.
- * @return {!Transform} Identity transform.
- */
-
-function create() {
-  return [1, 0, 0, 1, 0, 0];
-}
-/**
- * Resets the given transform to an identity transform.
- * @param {!Transform} transform Transform.
- * @return {!Transform} Transform.
- */
-
-
-function reset(transform) {
-  return set(transform, 1, 0, 0, 1, 0, 0);
-}
-/**
- * Multiply the underlying matrices of two transforms and return the result in
- * the first transform.
- * @param {!Transform} transform1 Transform parameters of matrix 1.
- * @param {!Transform} transform2 Transform parameters of matrix 2.
- * @return {!Transform} transform1 multiplied with transform2.
- */
-
-
-function multiply(transform1, transform2) {
-  var a1 = transform1[0];
-  var b1 = transform1[1];
-  var c1 = transform1[2];
-  var d1 = transform1[3];
-  var e1 = transform1[4];
-  var f1 = transform1[5];
-  var a2 = transform2[0];
-  var b2 = transform2[1];
-  var c2 = transform2[2];
-  var d2 = transform2[3];
-  var e2 = transform2[4];
-  var f2 = transform2[5];
-  transform1[0] = a1 * a2 + c1 * b2;
-  transform1[1] = b1 * a2 + d1 * b2;
-  transform1[2] = a1 * c2 + c1 * d2;
-  transform1[3] = b1 * c2 + d1 * d2;
-  transform1[4] = a1 * e2 + c1 * f2 + e1;
-  transform1[5] = b1 * e2 + d1 * f2 + f1;
-  return transform1;
-}
-/**
- * Set the transform components a-f on a given transform.
- * @param {!Transform} transform Transform.
- * @param {number} a The a component of the transform.
- * @param {number} b The b component of the transform.
- * @param {number} c The c component of the transform.
- * @param {number} d The d component of the transform.
- * @param {number} e The e component of the transform.
- * @param {number} f The f component of the transform.
- * @return {!Transform} Matrix with transform applied.
- */
-
-
-function set(transform, a, b, c, d, e, f) {
-  transform[0] = a;
-  transform[1] = b;
-  transform[2] = c;
-  transform[3] = d;
-  transform[4] = e;
-  transform[5] = f;
-  return transform;
-}
-/**
- * Set transform on one matrix from another matrix.
- * @param {!Transform} transform1 Matrix to set transform to.
- * @param {!Transform} transform2 Matrix to set transform from.
- * @return {!Transform} transform1 with transform from transform2 applied.
- */
-
-
-function setFromArray(transform1, transform2) {
-  transform1[0] = transform2[0];
-  transform1[1] = transform2[1];
-  transform1[2] = transform2[2];
-  transform1[3] = transform2[3];
-  transform1[4] = transform2[4];
-  transform1[5] = transform2[5];
-  return transform1;
-}
-/**
- * Transforms the given coordinate with the given transform returning the
- * resulting, transformed coordinate. The coordinate will be modified in-place.
- *
- * @param {Transform} transform The transformation.
- * @param {import("./coordinate.js").Coordinate|import("./pixel.js").Pixel} coordinate The coordinate to transform.
- * @return {import("./coordinate.js").Coordinate|import("./pixel.js").Pixel} return coordinate so that operations can be
- *     chained together.
- */
-
-
-function apply(transform, coordinate) {
-  var x = coordinate[0];
-  var y = coordinate[1];
-  coordinate[0] = transform[0] * x + transform[2] * y + transform[4];
-  coordinate[1] = transform[1] * x + transform[3] * y + transform[5];
-  return coordinate;
-}
-/**
- * Applies rotation to the given transform.
- * @param {!Transform} transform Transform.
- * @param {number} angle Angle in radians.
- * @return {!Transform} The rotated transform.
- */
-
-
-function rotate(transform, angle) {
-  var cos = Math.cos(angle);
-  var sin = Math.sin(angle);
-  return multiply(transform, set(tmp_, cos, sin, -sin, cos, 0, 0));
-}
-/**
- * Applies scale to a given transform.
- * @param {!Transform} transform Transform.
- * @param {number} x Scale factor x.
- * @param {number} y Scale factor y.
- * @return {!Transform} The scaled transform.
- */
-
-
-function scale(transform, x, y) {
-  return multiply(transform, set(tmp_, x, 0, 0, y, 0, 0));
-}
-/**
- * Creates a scale transform.
- * @param {!Transform} target Transform to overwrite.
- * @param {number} x Scale factor x.
- * @param {number} y Scale factor y.
- * @return {!Transform} The scale transform.
- */
-
-
-function makeScale(target, x, y) {
-  return set(target, x, 0, 0, y, 0, 0);
-}
-/**
- * Applies translation to the given transform.
- * @param {!Transform} transform Transform.
- * @param {number} dx Translation x.
- * @param {number} dy Translation y.
- * @return {!Transform} The translated transform.
- */
-
-
-function translate(transform, dx, dy) {
-  return multiply(transform, set(tmp_, 1, 0, 0, 1, dx, dy));
-}
-/**
- * Creates a composite transform given an initial translation, scale, rotation, and
- * final translation (in that order only, not commutative).
- * @param {!Transform} transform The transform (will be modified in place).
- * @param {number} dx1 Initial translation x.
- * @param {number} dy1 Initial translation y.
- * @param {number} sx Scale factor x.
- * @param {number} sy Scale factor y.
- * @param {number} angle Rotation (in counter-clockwise radians).
- * @param {number} dx2 Final translation x.
- * @param {number} dy2 Final translation y.
- * @return {!Transform} The composite transform.
- */
-
-
-function compose(transform, dx1, dy1, sx, sy, angle, dx2, dy2) {
-  var sin = Math.sin(angle);
-  var cos = Math.cos(angle);
-  transform[0] = sx * cos;
-  transform[1] = sy * sin;
-  transform[2] = -sx * sin;
-  transform[3] = sy * cos;
-  transform[4] = dx2 * sx * cos - dy2 * sx * sin + dx1;
-  transform[5] = dx2 * sy * sin + dy2 * sy * cos + dy1;
-  return transform;
-}
-/**
- * Creates a composite transform given an initial translation, scale, rotation, and
- * final translation (in that order only, not commutative). The resulting transform
- * string can be applied as `transform` porperty of an HTMLElement's style.
- * @param {number} dx1 Initial translation x.
- * @param {number} dy1 Initial translation y.
- * @param {number} sx Scale factor x.
- * @param {number} sy Scale factor y.
- * @param {number} angle Rotation (in counter-clockwise radians).
- * @param {number} dx2 Final translation x.
- * @param {number} dy2 Final translation y.
- * @return {string} The composite css transform.
- * @api
- */
-
-
-function composeCssTransform(dx1, dy1, sx, sy, angle, dx2, dy2) {
-  return toString(compose(create(), dx1, dy1, sx, sy, angle, dx2, dy2));
-}
-/**
- * Invert the given transform.
- * @param {!Transform} source The source transform to invert.
- * @return {!Transform} The inverted (source) transform.
- */
-
-
-function invert(source) {
-  return makeInverse(source, source);
-}
-/**
- * Invert the given transform.
- * @param {!Transform} target Transform to be set as the inverse of
- *     the source transform.
- * @param {!Transform} source The source transform to invert.
- * @return {!Transform} The inverted (target) transform.
- */
-
-
-function makeInverse(target, source) {
-  var det = determinant(source);
-  (0, _asserts.assert)(det !== 0, 32); // Transformation matrix cannot be inverted
-
-  var a = source[0];
-  var b = source[1];
-  var c = source[2];
-  var d = source[3];
-  var e = source[4];
-  var f = source[5];
-  target[0] = d / det;
-  target[1] = -b / det;
-  target[2] = -c / det;
-  target[3] = a / det;
-  target[4] = (c * f - d * e) / det;
-  target[5] = -(a * f - b * e) / det;
-  return target;
-}
-/**
- * Returns the determinant of the given matrix.
- * @param {!Transform} mat Matrix.
- * @return {number} Determinant.
- */
-
-
-function determinant(mat) {
-  return mat[0] * mat[3] - mat[1] * mat[2];
-}
-/**
- * A string version of the transform.  This can be used
- * for CSS transforms.
- * @param {!Transform} mat Matrix.
- * @return {string} The transform as a string.
- */
-
-
-function toString(mat) {
-  return 'matrix(' + mat.join(', ') + ')';
-}
-},{"./asserts.js":"node_modules/ol/asserts.js"}],"node_modules/ol/geom/flat/transform.js":[function(require,module,exports) {
+},{"./proj/Projection.js":"node_modules/ol/proj/Projection.js","./proj/Units.js":"node_modules/ol/proj/Units.js","./proj/epsg3857.js":"node_modules/ol/proj/epsg3857.js","./proj/epsg4326.js":"node_modules/ol/proj/epsg4326.js","./proj/projections.js":"node_modules/ol/proj/projections.js","./proj/transforms.js":"node_modules/ol/proj/transforms.js","./extent.js":"node_modules/ol/extent.js","./math.js":"node_modules/ol/math.js","./sphere.js":"node_modules/ol/sphere.js","./coordinate.js":"node_modules/ol/coordinate.js"}],"node_modules/ol/geom/flat/transform.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -56668,26 +56668,53 @@ exports.default = _default;
 
 require("ol/ol.css");
 
-var _proj = require("ol/proj.js");
-
 var _ol2 = require("ol");
 
 var _Tile = _interopRequireDefault(require("ol/layer/Tile"));
 
 var _OSM = _interopRequireDefault(require("ol/source/OSM"));
 
-var _extent = require("ol/extent");
+var _proj = require("ol/proj.js");
+
+var _control = require("ol/control");
+
+var _MousePosition = _interopRequireDefault(require("ol/control/MousePosition"));
+
+var _coordinate = require("ol/coordinate");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var unitsSelect = "metric";
+var control;
+
+function scaleControl() {
+  control = new _control.ScaleLine({
+    units: unitsSelect
+  });
+  return control;
+}
+
+;
+var mousePositionControl = new _MousePosition.default({
+  coordinateFormat: (0, _coordinate.createStringXY)(4),
+  projection: 'EPSG:4326',
+  className: 'custom-mouse-position',
+  target: document.getElementById('mouse-position')
+});
+var attribution = new _control.Attribution({
+  collapsible: true
+});
 var map = new _ol2.Map({
-  target: 'map',
+  controls: (0, _control.defaults)().extend([mousePositionControl, scaleControl()]),
   layers: [new _Tile.default({
-    source: new _OSM.default()
+    source: new _OSM.default({
+      "url": "http://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+    })
   })],
+  target: 'map',
   view: new _ol2.View({
     center: (0, _proj.fromLonLat)([-71.33, 46.7]),
-    zoom: 10
+    zoom: 13
   })
 });
 
@@ -56696,15 +56723,21 @@ function over(selected) {
   document.getElementById(selected).style.backgroundColor = "white";
 }
 
+;
+
 function left(selected) {
   var selected = selected.id;
   document.getElementById(selected).style.backgroundColor = "#BBBBBB";
 }
 
+;
+
 function search() {
   var user = prompt("Insert the usernam, you want to search"); //lastPosition = get last position of user
   //zoom on lastPosiiton
 }
+
+;
 
 function save() {
   var printContent = document.getElementById('text');
@@ -56716,10 +56749,14 @@ function save() {
   WinPrint.close();
 }
 
+;
+
 function extend() {
   window.open("index.html", "_self");
 }
-},{"ol/ol.css":"node_modules/ol/ol.css","ol/proj.js":"node_modules/ol/proj.js","ol":"node_modules/ol/index.js","ol/layer/Tile":"node_modules/ol/layer/Tile.js","ol/source/OSM":"node_modules/ol/source/OSM.js","ol/extent":"node_modules/ol/extent.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+
+;
+},{"ol/ol.css":"node_modules/ol/ol.css","ol":"node_modules/ol/index.js","ol/layer/Tile":"node_modules/ol/layer/Tile.js","ol/source/OSM":"node_modules/ol/source/OSM.js","ol/proj.js":"node_modules/ol/proj.js","ol/control":"node_modules/ol/control.js","ol/control/MousePosition":"node_modules/ol/control/MousePosition.js","ol/coordinate":"node_modules/ol/coordinate.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -56747,7 +56784,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56650" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52523" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
