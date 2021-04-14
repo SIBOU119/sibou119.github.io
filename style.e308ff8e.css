@@ -1,32 +1,31 @@
-#map {
-    width: 100%;
-    height: 750px;
+html {
+    height: 100%;
 }
 
-.body {
-    position: relative;
+body {
     display: flex;
     flex-direction: row;
     background-color: black;
-    height: 825px;
+    height: 100%;
+    margin: 0;
 }
 
 .menu_legend {
     display: flex;
     flex-direction: column;
-    width: 350px;
+    width: 20%;
+    min-width: 250px;
     height: 100%;
-    text-align: center;
     background-color: #404040;
 }
 
-.menu_legend .buttons {
-    position: absolute;
-    bottom: 0%;
+.buttons {
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
     margin-bottom: 20px;
-    width: 285px;
+    min-width: 250px;
+    height: 100%;
 }
 
 .menu_legend h2 {
@@ -40,25 +39,10 @@
     color: white;
 }
 
-.content {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-}
-
-.title {
-    color: #505050;
-    text-decoration: underline;
-    text-align: center;
-    margin: 5px;
-    margin-bottom: 25px;
-}
-
 .btn {
     width: 90%;
     padding: 5%;
-    margin: 10% 5% 0 5%;
+    margin: 5% 5% 0 5%;
     background-color: #808080;
 }
 
@@ -84,9 +68,9 @@
 }
 
 .count {
-    width: 40%;
     display: flex;
     justify-content: center;
+    width: 40%;
 }
 
 .user {
@@ -102,9 +86,28 @@
     font-weight: bold;
 }
 
+.content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.title {
+    color: #505050;
+    text-decoration: underline;
+    text-align: center;
+    margin: 5px;
+    margin-bottom: 25px;
+}
+
+.map {
+    width: 100%;
+    height: 100%;
+}
+
 #mouse-position {
     color: #808080;
-    margin-left: 20px;
+    padding-left: 20px;
 }
 
 /*# sourceMappingURL=/style.e308ff8e.css.map */
