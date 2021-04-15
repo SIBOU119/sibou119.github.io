@@ -81022,7 +81022,283 @@ function getSource(map, sourceId) {
     }
   }
 }
-},{"mapbox-to-css-font":"node_modules/mapbox-to-css-font/index.js","./stylefunction":"node_modules/ol-mapbox-style/dist/stylefunction.js","webfont-matcher/lib/fonts/google":"node_modules/webfont-matcher/lib/fonts/google.js","ol/proj":"node_modules/ol/proj.js","ol/tilegrid":"node_modules/ol/tilegrid.js","ol/tilegrid/TileGrid":"node_modules/ol/tilegrid/TileGrid.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/format/MVT":"node_modules/ol/format/MVT.js","ol/Observable":"node_modules/ol/Observable.js","ol/layer/Tile":"node_modules/ol/layer/Tile.js","ol/layer/Vector":"node_modules/ol/layer/Vector.js","ol/layer/VectorTile":"node_modules/ol/layer/VectorTile.js","ol/source/TileJSON":"node_modules/ol/source/TileJSON.js","ol/source/Vector":"node_modules/ol/source/Vector.js","ol/source/VectorTile":"node_modules/ol/source/VectorTile.js","@mapbox/mapbox-gl-style-spec":"node_modules/@mapbox/mapbox-gl-style-spec/dist/index.es.js","./util":"node_modules/ol-mapbox-style/dist/util.js"}],"index.js":[function(require,module,exports) {
+},{"mapbox-to-css-font":"node_modules/mapbox-to-css-font/index.js","./stylefunction":"node_modules/ol-mapbox-style/dist/stylefunction.js","webfont-matcher/lib/fonts/google":"node_modules/webfont-matcher/lib/fonts/google.js","ol/proj":"node_modules/ol/proj.js","ol/tilegrid":"node_modules/ol/tilegrid.js","ol/tilegrid/TileGrid":"node_modules/ol/tilegrid/TileGrid.js","ol/Map":"node_modules/ol/Map.js","ol/View":"node_modules/ol/View.js","ol/format/GeoJSON":"node_modules/ol/format/GeoJSON.js","ol/format/MVT":"node_modules/ol/format/MVT.js","ol/Observable":"node_modules/ol/Observable.js","ol/layer/Tile":"node_modules/ol/layer/Tile.js","ol/layer/Vector":"node_modules/ol/layer/Vector.js","ol/layer/VectorTile":"node_modules/ol/layer/VectorTile.js","ol/source/TileJSON":"node_modules/ol/source/TileJSON.js","ol/source/Vector":"node_modules/ol/source/Vector.js","ol/source/VectorTile":"node_modules/ol/source/VectorTile.js","@mapbox/mapbox-gl-style-spec":"node_modules/@mapbox/mapbox-gl-style-spec/dist/index.es.js","./util":"node_modules/ol-mapbox-style/dist/util.js"}],"node_modules/ol/source/XYZ.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _TileImage = _interopRequireDefault(require("./TileImage.js"));
+
+var _tilegrid = require("../tilegrid.js");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @module ol/source/XYZ
+ */
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+
+/**
+ * @typedef {Object} Options
+ * @property {import("./Source.js").AttributionLike} [attributions] Attributions.
+ * @property {boolean} [attributionsCollapsible=true] Attributions are collapsible.
+ * @property {number} [cacheSize] Initial tile cache size. Will auto-grow to hold at least the number of tiles in the viewport.
+ * @property {null|string} [crossOrigin] The `crossOrigin` attribute for loaded images.  Note that
+ * you must provide a `crossOrigin` value if you want to access pixel data with the Canvas renderer.
+ * See https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image for more detail.
+ * @property {boolean} [imageSmoothing=true] Enable image smoothing.
+ * @property {boolean} [opaque=false] Whether the layer is opaque.
+ * @property {import("../proj.js").ProjectionLike} [projection='EPSG:3857'] Projection.
+ * @property {number} [reprojectionErrorThreshold=0.5] Maximum allowed reprojection error (in pixels).
+ * Higher values can increase reprojection performance, but decrease precision.
+ * @property {number} [maxZoom=42] Optional max zoom level. Not used if `tileGrid` is provided.
+ * @property {number} [minZoom=0] Optional min zoom level. Not used if `tileGrid` is provided.
+ * @property {number} [maxResolution] Optional tile grid resolution at level zero. Not used if `tileGrid` is provided.
+ * @property {import("../tilegrid/TileGrid.js").default} [tileGrid] Tile grid.
+ * @property {import("../Tile.js").LoadFunction} [tileLoadFunction] Optional function to load a tile given a URL. The default is
+ * ```js
+ * function(imageTile, src) {
+ *   imageTile.getImage().src = src;
+ * };
+ * ```
+ * @property {number} [tilePixelRatio=1] The pixel ratio used by the tile service.
+ * For example, if the tile service advertizes 256px by 256px tiles but actually sends 512px
+ * by 512px images (for retina/hidpi devices) then `tilePixelRatio`
+ * should be set to `2`.
+ * @property {number|import("../size.js").Size} [tileSize=[256, 256]] The tile size used by the tile service.
+ * Not used if `tileGrid` is provided.
+ * @property {import("../Tile.js").UrlFunction} [tileUrlFunction] Optional function to get
+ * tile URL given a tile coordinate and the projection.
+ * Required if `url` or `urls` are not provided.
+ * @property {string} [url] URL template. Must include `{x}`, `{y}` or `{-y}`,
+ * and `{z}` placeholders. A `{?-?}` template pattern, for example `subdomain{a-f}.domain.com`,
+ * may be used instead of defining each one separately in the `urls` option.
+ * @property {Array<string>} [urls] An array of URL templates.
+ * @property {boolean} [wrapX=true] Whether to wrap the world horizontally.
+ * @property {number} [transition=250] Duration of the opacity transition for rendering.
+ * To disable the opacity transition, pass `transition: 0`.
+ * @property {number} [zDirection=0] Indicate which resolution should be used
+ * by a renderer if the view resolution does not match any resolution of the tile source.
+ * If 0, the nearest resolution will be used. If 1, the nearest lower resolution
+ * will be used. If -1, the nearest higher resolution will be used.
+ */
+
+/**
+ * @classdesc
+ * Layer source for tile data with URLs in a set XYZ format that are
+ * defined in a URL template. By default, this follows the widely-used
+ * Google grid where `x` 0 and `y` 0 are in the top left. Grids like
+ * TMS where `x` 0 and `y` 0 are in the bottom left can be used by
+ * using the `{-y}` placeholder in the URL template, so long as the
+ * source does not have a custom tile grid. In this case
+ * a `tileUrlFunction` can be used, such as:
+ * ```js
+ *  tileUrlFunction: function(coordinate) {
+ *    return 'http://mapserver.com/' + coordinate[0] + '/' +
+ *      coordinate[1] + '/' + (-coordinate[2] - 1) + '.png';
+ *  }
+ * ```
+ * @api
+ */
+var XYZ =
+/** @class */
+function (_super) {
+  __extends(XYZ, _super);
+  /**
+   * @param {Options=} opt_options XYZ options.
+   */
+
+
+  function XYZ(opt_options) {
+    var _this = this;
+
+    var options = opt_options || {};
+    var projection = options.projection !== undefined ? options.projection : 'EPSG:3857';
+    var tileGrid = options.tileGrid !== undefined ? options.tileGrid : (0, _tilegrid.createXYZ)({
+      extent: (0, _tilegrid.extentFromProjection)(projection),
+      maxResolution: options.maxResolution,
+      maxZoom: options.maxZoom,
+      minZoom: options.minZoom,
+      tileSize: options.tileSize
+    });
+    _this = _super.call(this, {
+      attributions: options.attributions,
+      cacheSize: options.cacheSize,
+      crossOrigin: options.crossOrigin,
+      imageSmoothing: options.imageSmoothing,
+      opaque: options.opaque,
+      projection: projection,
+      reprojectionErrorThreshold: options.reprojectionErrorThreshold,
+      tileGrid: tileGrid,
+      tileLoadFunction: options.tileLoadFunction,
+      tilePixelRatio: options.tilePixelRatio,
+      tileUrlFunction: options.tileUrlFunction,
+      url: options.url,
+      urls: options.urls,
+      wrapX: options.wrapX !== undefined ? options.wrapX : true,
+      transition: options.transition,
+      attributionsCollapsible: options.attributionsCollapsible,
+      zDirection: options.zDirection
+    }) || this;
+    return _this;
+  }
+
+  return XYZ;
+}(_TileImage.default);
+
+var _default = XYZ;
+exports.default = _default;
+},{"./TileImage.js":"node_modules/ol/source/TileImage.js","../tilegrid.js":"node_modules/ol/tilegrid.js"}],"node_modules/ol/source/OSM.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.ATTRIBUTION = void 0;
+
+var _XYZ = _interopRequireDefault(require("./XYZ.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @module ol/source/OSM
+ */
+var __extends = void 0 && (void 0).__extends || function () {
+  var extendStatics = function (d, b) {
+    extendStatics = Object.setPrototypeOf || {
+      __proto__: []
+    } instanceof Array && function (d, b) {
+      d.__proto__ = b;
+    } || function (d, b) {
+      for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+    };
+
+    return extendStatics(d, b);
+  };
+
+  return function (d, b) {
+    extendStatics(d, b);
+
+    function __() {
+      this.constructor = d;
+    }
+
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+  };
+}();
+
+/**
+ * The attribution containing a link to the OpenStreetMap Copyright and License
+ * page.
+ * @const
+ * @type {string}
+ * @api
+ */
+var ATTRIBUTION = '&#169; ' + '<a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> ' + 'contributors.';
+/**
+ * @typedef {Object} Options
+ * @property {import("./Source.js").AttributionLike} [attributions] Attributions.
+ * @property {number} [cacheSize] Initial tile cache size. Will auto-grow to hold at least the number of tiles in the viewport.
+ * @property {null|string} [crossOrigin='anonymous'] The `crossOrigin` attribute for loaded images.  Note that
+ * you must provide a `crossOrigin` value if you want to access pixel data with the Canvas renderer.
+ * See https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_enabled_image for more detail.
+ * @property {boolean} [imageSmoothing=true] Enable image smoothing.
+ * @property {number} [maxZoom=19] Max zoom.
+ * @property {boolean} [opaque=true] Whether the layer is opaque.
+ * @property {number} [reprojectionErrorThreshold=0.5] Maximum allowed reprojection error (in pixels).
+ * Higher values can increase reprojection performance, but decrease precision.
+ * @property {import("../Tile.js").LoadFunction} [tileLoadFunction] Optional function to load a tile given a URL. The default is
+ * ```js
+ * function(imageTile, src) {
+ *   imageTile.getImage().src = src;
+ * };
+ * ```
+ * @property {number} [transition=250] Duration of the opacity transition for rendering.
+ * To disable the opacity transition, pass `transition: 0`.
+ * @property {string} [url='https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png'] URL template.
+ * Must include `{x}`, `{y}` or `{-y}`, and `{z}` placeholders.
+ * @property {boolean} [wrapX=true] Whether to wrap the world horizontally.
+ */
+
+/**
+ * @classdesc
+ * Layer source for the OpenStreetMap tile server.
+ * @api
+ */
+
+exports.ATTRIBUTION = ATTRIBUTION;
+
+var OSM =
+/** @class */
+function (_super) {
+  __extends(OSM, _super);
+  /**
+   * @param {Options=} [opt_options] Open Street Map options.
+   */
+
+
+  function OSM(opt_options) {
+    var _this = this;
+
+    var options = opt_options || {};
+    var attributions;
+
+    if (options.attributions !== undefined) {
+      attributions = options.attributions;
+    } else {
+      attributions = [ATTRIBUTION];
+    }
+
+    var crossOrigin = options.crossOrigin !== undefined ? options.crossOrigin : 'anonymous';
+    var url = options.url !== undefined ? options.url : 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    _this = _super.call(this, {
+      attributions: attributions,
+      attributionsCollapsible: false,
+      cacheSize: options.cacheSize,
+      crossOrigin: crossOrigin,
+      imageSmoothing: options.imageSmoothing,
+      maxZoom: options.maxZoom !== undefined ? options.maxZoom : 19,
+      opaque: options.opaque !== undefined ? options.opaque : true,
+      reprojectionErrorThreshold: options.reprojectionErrorThreshold,
+      tileLoadFunction: options.tileLoadFunction,
+      transition: options.transition,
+      url: url,
+      wrapX: options.wrapX
+    }) || this;
+    return _this;
+  }
+
+  return OSM;
+}(_XYZ.default);
+
+var _default = OSM;
+exports.default = _default;
+},{"./XYZ.js":"node_modules/ol/source/XYZ.js"}],"index.js":[function(require,module,exports) {
 "use strict";
 
 require("ol/ol.css");
@@ -81043,6 +81319,8 @@ var _Tile = _interopRequireDefault(require("ol/layer/Tile"));
 
 var _olMapboxStyle = _interopRequireDefault(require("ol-mapbox-style"));
 
+var _OSM = _interopRequireDefault(require("ol/source/OSM"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var unitsSelect = "metric";
@@ -81051,7 +81329,7 @@ var styleJson = 'https://api.maptiler.com/maps/905e801e-9a31-4a5d-8e2f-533a891ba
 var key = 'Lj6AifhX1rgsSDTHIDVq';
 var layers = [new _Tile.default({
   minZoom: 12,
-  maxZoom: 16,
+  maxZoom: 18,
   source: new _TileWMS.default({
     url: 'https://geoegl.msp.gouv.qc.ca/ws/mffpecofor.fcgi?',
     params: {
@@ -81061,87 +81339,31 @@ var layers = [new _Tile.default({
     serverType: 'geoserver'
   })
 }), new _Tile.default({
-  source: new _TileWMS.default({
-    url: 'https://servicesmatriciels.mern.gouv.qc.ca/erdas-iws/ogc/wms/Elevation?',
-    params: {
-      'LAYERS': 'Regional_MNA3D-Quebec-2M_Relief',
-      'TILED': true
-    },
-    serverType: 'geoserver'
-  }),
-  opacity: 0.3
-}), new _Tile.default({
-  source: new _TileWMS.default({
-    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/GRHQ_simple_WMS/MapServer/WMSServer?',
-    params: {
-      'LAYERS': 'Surface [125K - 1]',
-      'TILED': true
-    },
-    serverType: 'geoserver'
-  }),
-  opacity: 0.85
-}), new _Tile.default({
-  source: new _TileWMS.default({
-    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/GRHQ_simple_WMS/MapServer/WMSServer?',
-    params: {
-      'LAYERS': 'Permanent [50K - 1]',
-      'TILED': true
-    },
-    serverType: 'geoserver'
-  }),
-  opacity: 0.85
-}), new _Tile.default({
-  minZoom: 12,
-  source: new _TileWMS.default({
-    url: 'http://localhost:8080/geoserver/Ma_premiere_carte/wms?',
-    params: {
-      'LAYERS': 'Ma_premiere_carte:Rues, Ma_premiere_carte:Parcs',
-      'TILED': true
-    },
-    serverType: 'geoserver'
-  })
-}), new _Tile.default({
-  minZoom: 14,
-  source: new _TileWMS.default({
-    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
-    params: {
-      'LAYERS': 'Route locale [10K - 1]',
-      'TILED': true
-    },
-    serverType: 'geoserver'
-  })
-}), new _Tile.default({
-  minZoom: 13,
-  maxZoom: 15,
-  source: new _TileWMS.default({
-    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
-    params: {
-      'LAYERS': 'Route locale [25K - 10K]',
-      'TILED': true
-    },
-    serverType: 'geoserver'
-  })
-}), new _Tile.default({
-  minZoom: 12,
-  source: new _TileWMS.default({
-    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
-    params: {
-      'LAYERS': 'Route locale [200K - 25K]',
-      'TILED': true
-    },
-    serverType: 'geoserver'
-  })
-}), new _Tile.default({
-  minZoom: 12,
-  source: new _TileWMS.default({
-    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
-    params: {
-      'LAYERS': 'Autoroute [50K - 8K]',
-      'TILED': true
-    },
-    serverType: 'geoserver'
-  })
-})];
+  source: new _OSM.default(),
+  opacity: 0.7
+})
+/*
+new TileLayer({
+    source: new TileWMS({
+        url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/GRHQ_simple_WMS/MapServer/WMSServer?',
+        params: { 'LAYERS': 'Surface [125K - 1]', 'TILED': true },
+        serverType: 'geoserver',
+    }),
+    opacity: 0.85,
+}),
+*/
+
+/*
+ new TileLayer({
+     minZoom: 12,
+     source: new TileWMS({
+         url: 'http://localhost:8080/geoserver/Ma_premiere_carte/wms?',
+         params: { 'LAYERS': 'Ma_premiere_carte:Rues, Ma_premiere_carte:Parcs', 'TILED': true },
+         serverType: 'geoserver',
+     }),
+ }),
+ */
+];
 var mousePositionControl = new _MousePosition.default({
   coordinateFormat: (0, _coordinate.createStringXY)(4),
   projection: 'EPSG:4326',
@@ -81155,7 +81377,9 @@ var map = new _ol2.Map({
   view: new _ol2.View({
     constrainResolution: true,
     center: (0, _proj.fromLonLat)([-71.33, 46.7]),
-    zoom: 13
+    zoom: 13,
+    minZoom: 12,
+    maxZoom: 18
   })
 });
 
@@ -81255,7 +81479,7 @@ function saveMap() {
 function extend() {
   window.open("index.html", "_self");
 }
-},{"ol/ol.css":"node_modules/ol/ol.css","ol":"node_modules/ol/index.js","ol/proj":"node_modules/ol/proj.js","ol/control":"node_modules/ol/control.js","ol/control/MousePosition":"node_modules/ol/control/MousePosition.js","ol/coordinate":"node_modules/ol/coordinate.js","ol/source/TileWMS":"node_modules/ol/source/TileWMS.js","ol/layer/Tile":"node_modules/ol/layer/Tile.js","ol-mapbox-style":"node_modules/ol-mapbox-style/dist/index.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"ol/ol.css":"node_modules/ol/ol.css","ol":"node_modules/ol/index.js","ol/proj":"node_modules/ol/proj.js","ol/control":"node_modules/ol/control.js","ol/control/MousePosition":"node_modules/ol/control/MousePosition.js","ol/coordinate":"node_modules/ol/coordinate.js","ol/source/TileWMS":"node_modules/ol/source/TileWMS.js","ol/layer/Tile":"node_modules/ol/layer/Tile.js","ol-mapbox-style":"node_modules/ol-mapbox-style/dist/index.js","ol/source/OSM":"node_modules/ol/source/OSM.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -81283,7 +81507,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49168" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50879" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
