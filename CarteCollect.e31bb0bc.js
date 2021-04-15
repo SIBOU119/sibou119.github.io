@@ -81051,9 +81051,64 @@ var styleJson = 'https://api.maptiler.com/maps/905e801e-9a31-4a5d-8e2f-533a891ba
 var key = 'Lj6AifhX1rgsSDTHIDVq';
 var layers = [new _Tile.default({
   source: new _TileWMS.default({
+    url: 'https://geoegl.msp.gouv.qc.ca/ws/mffpecofor.fcgi?',
+    params: {
+      'LAYERS': 'lidar_ombre',
+      'TILED': true
+    },
+    serverType: 'geoserver'
+  })
+}), new _Tile.default({
+  source: new _TileWMS.default({
+    url: 'https://servicesmatriciels.mern.gouv.qc.ca/erdas-iws/ogc/wms/Elevation?',
+    params: {
+      'LAYERS': 'Regional_MNA3D-Quebec-2M_Relief',
+      'TILED': true
+    },
+    serverType: 'geoserver'
+  }),
+  opacity: 0.3
+}), new _Tile.default({
+  source: new _TileWMS.default({
     url: 'http://localhost:8080/geoserver/Ma_premiere_carte/wms?',
     params: {
-      'LAYERS': 'Ma_premiere_carte:Lacs_et_Rivieres, Ma_premiere_carte:Rues, Ma_premiere_carte:Parcs',
+      'LAYERS': 'Ma_premiere_carte:Rues, Ma_premiere_carte:Parcs',
+      'TILED': true
+    },
+    serverType: 'geoserver'
+  })
+}), new _Tile.default({
+  source: new _TileWMS.default({
+    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
+    params: {
+      'LAYERS': 'Route locale [10K - 1]',
+      'TILED': true
+    },
+    serverType: 'geoserver'
+  })
+}), new _Tile.default({
+  source: new _TileWMS.default({
+    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
+    params: {
+      'LAYERS': 'Route locale [25K - 10K]',
+      'TILED': true
+    },
+    serverType: 'geoserver'
+  })
+}), new _Tile.default({
+  source: new _TileWMS.default({
+    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
+    params: {
+      'LAYERS': 'Route locale [200K - 25K]',
+      'TILED': true
+    },
+    serverType: 'geoserver'
+  })
+}), new _Tile.default({
+  source: new _TileWMS.default({
+    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
+    params: {
+      'LAYERS': 'Autoroute [50K - 8K]',
       'TILED': true
     },
     serverType: 'geoserver'
@@ -81200,7 +81255,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61799" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57272" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
