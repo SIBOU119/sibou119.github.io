@@ -81050,6 +81050,8 @@ var control;
 var styleJson = 'https://api.maptiler.com/maps/905e801e-9a31-4a5d-8e2f-533a891ba095/style.json?key=Lj6AifhX1rgsSDTHIDVq';
 var key = 'Lj6AifhX1rgsSDTHIDVq';
 var layers = [new _Tile.default({
+  minZoom: 12,
+  maxZoom: 16,
   source: new _TileWMS.default({
     url: 'https://geoegl.msp.gouv.qc.ca/ws/mffpecofor.fcgi?',
     params: {
@@ -81070,6 +81072,27 @@ var layers = [new _Tile.default({
   opacity: 0.3
 }), new _Tile.default({
   source: new _TileWMS.default({
+    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/GRHQ_simple_WMS/MapServer/WMSServer?',
+    params: {
+      'LAYERS': 'Surface [125K - 1]',
+      'TILED': true
+    },
+    serverType: 'geoserver'
+  }),
+  opacity: 0.85
+}), new _Tile.default({
+  source: new _TileWMS.default({
+    url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/GRHQ_simple_WMS/MapServer/WMSServer?',
+    params: {
+      'LAYERS': 'Permanent [50K - 1]',
+      'TILED': true
+    },
+    serverType: 'geoserver'
+  }),
+  opacity: 0.85
+}), new _Tile.default({
+  minZoom: 12,
+  source: new _TileWMS.default({
     url: 'http://localhost:8080/geoserver/Ma_premiere_carte/wms?',
     params: {
       'LAYERS': 'Ma_premiere_carte:Rues, Ma_premiere_carte:Parcs',
@@ -81078,6 +81101,7 @@ var layers = [new _Tile.default({
     serverType: 'geoserver'
   })
 }), new _Tile.default({
+  minZoom: 14,
   source: new _TileWMS.default({
     url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
     params: {
@@ -81087,6 +81111,8 @@ var layers = [new _Tile.default({
     serverType: 'geoserver'
   })
 }), new _Tile.default({
+  minZoom: 13,
+  maxZoom: 15,
   source: new _TileWMS.default({
     url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
     params: {
@@ -81096,6 +81122,7 @@ var layers = [new _Tile.default({
     serverType: 'geoserver'
   })
 }), new _Tile.default({
+  minZoom: 12,
   source: new _TileWMS.default({
     url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
     params: {
@@ -81105,6 +81132,7 @@ var layers = [new _Tile.default({
     serverType: 'geoserver'
   })
 }), new _Tile.default({
+  minZoom: 12,
   source: new _TileWMS.default({
     url: 'https://servicescarto.mern.gouv.qc.ca/pes/services/Territoire/AQreseauPlus_WMS/MapServer/WMSServer?',
     params: {
@@ -81255,7 +81283,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57272" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49168" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
